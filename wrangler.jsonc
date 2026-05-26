@@ -1,20 +1,23 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "oauth2",
-  "main": "src/index.ts",
-  "compatibility_date": "2026-05-26",
+  "main": "src/index.tsx",
+  "compatibility_date": "2026-05-25",
   "compatibility_flags": [
     "nodejs_compat"
   ],
-  // "vars": {
-  //   "MY_VAR": "my-variable"
-  // },
   "kv_namespaces": [
     {
       "binding": "KV",
       "id": "4691155312854050a869f90fd6c16dba"
     }
   ],
+  "assets": {
+    "directory": "public"
+  }
+  // "vars": {
+  //   "MY_VAR": "my-variable"
+  // },
   // "r2_buckets": [
   //   {
   //     "binding": "MY_BUCKET",
