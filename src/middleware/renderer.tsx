@@ -1,4 +1,4 @@
-import { Layout } from "../routes/ui/Layout";
+import { Layout } from "../ui/Layout";
 import { factory } from "../utils/createHono";
 
 export const renderer = factory.createMiddleware(async (c, next) => {

@@ -1,6 +1,6 @@
 export function Signup() {
     return (
-        <div>
+        <div class="text-amber-200">
             signup page
         </div>
     )

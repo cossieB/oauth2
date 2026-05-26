@@ -1,5 +1,5 @@
+import { Signup } from "../ui/Signup";
 import { factory } from "../utils/createHono";
-import { Signup } from "./ui/Signup";
 
 export const signupRoutes = factory.createApp()
 
