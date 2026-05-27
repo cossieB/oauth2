@@ -1,11 +1,11 @@
 import type { JSX } from "hono/jsx/jsx-runtime";
 
 type Props = {
-    children: JSX.ElementChildrenAttribute;
+    children: JSX.Element;
     title?: string;
 };
 
-function Document({children, title}: Props) {
+function Document({ children, title }: Props) {
     return (
         <html lang="en">
             <head>
@@ -13,6 +13,7 @@ function Document({children, title}: Props) {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                 <link rel="stylesheet" href="/reset.css" />
                 <link rel="stylesheet" href="/style.css" />
+                <script type="module" src="/script.js"></script>
                 <title> {title} </title>
             </head>
             <body>
@@ -22,10 +23,12 @@ function Document({children, title}: Props) {
     )
 }
 
-export function Layout({children, title = "OAuth2.0"}: Props) {
+export function Layout({ children, title = "OAuth2.0" }: Props) {
     return (
         <Document title={title}>
-            {children}
+            <main class="w-[min(90%,800px)] mx-auto">
+                {children}
+            </main>
         </Document>
     )
 }

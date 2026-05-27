@@ -14,21 +14,21 @@
   ],
   "assets": {
     "directory": "public"
-  }
-  // "vars": {
-  //   "MY_VAR": "my-variable"
-  // },
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "oauth",
+      "database_id": "5017dba5-d18c-42c9-98c1-5bcf75e6d043"
+    }
+  ],
+  "vars": {
+    "NODE_ENV": "production"
+  },
   // "r2_buckets": [
   //   {
   //     "binding": "MY_BUCKET",
   //     "bucket_name": "my-bucket"
-  //   }
-  // ],
-  // "d1_databases": [
-  //   {
-  //     "binding": "MY_DB",
-  //     "database_name": "my-database",
-  //     "database_id": ""
   //   }
   // ],
   // "ai": {
