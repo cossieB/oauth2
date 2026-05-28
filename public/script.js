@@ -1,23 +1,36 @@
-/**
- * @type HTMLFormElement | null
- */
-const signupForm = document.getElementById("signup-form")
-const signupErrorsDiv = document.getElementById("signup-errors")
-signupForm?.addEventListener("submit", async e => {
+/**@param {SubmitEvent} e */
+const handleSubmit = async e => {
     e.preventDefault();
-    const submitBtn = signupForm.querySelector("button")
+    const submitBtn = e.currentTarget.querySelector("button")
     submitBtn.disabled = true;
-    const fd = new FormData(signupForm)
-    const res = await fetch("/signup", {
+    const fd = new FormData(e.currentTarget)
+    const res = await fetch(e.currentTarget.action, {
         method: "POST",
         body: new URLSearchParams(fd)
     })
     submitBtn.disabled = false;
-    if (res.ok) return location.replace("/")
+    if (res.ok) return location.replace("/");
+    const errorsDiv = document.querySelector("pre")
     if (res.headers.get("Content-Type") == "application/json") {
         const data = await res.json();
-        signupErrorsDiv.textContent = JSON.stringify(data.errors, null, 4);
+        errorsDiv.textContent = JSON.stringify(data.errors, null, 4);
         return;
-    }
-    signupErrorsDiv.textContent = "Something went wrong. Please try again later"
+    }    
+    errorsDiv.textContent = "Something went wrong. Please try again later"    
+}
+
+/**
+ * @type {HTMLFormElement | null}
+ */
+
+const signupForm = document.getElementById("signup-form")
+const signinForm = document.getElementById("signin-form")
+signupForm?.addEventListener("submit", handleSubmit)
+signinForm?.addEventListener("submit", handleSubmit)
+
+const authLink = document.querySelectorAll("small>a").forEach(link => {
+    link.addEventListener("click", e => {
+        e.preventDefault();
+        location.replace(link.href)
+    })
 })

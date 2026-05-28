@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import titleCase from "../utils/titleCase";
 import { AppError } from "../utils/AppError";
+import type { User } from "../utils/types";
 
 type U = {
     username: string,
@@ -29,4 +30,10 @@ export async function createUser(user: U, DB: D1Database) {
 function getDuplicateField(errorMessage: string) {
     const match = errorMessage.match(/users\.(\w+)/);
     return match ? match[1] : null
+}
+
+export async function getUser(identifier: string, DB: D1Database) {
+    return await DB.prepare("SELECT * FROM users WHERE username = ? OR email = ?")
+        .bind(identifier, identifier)
+        .first() as User | null
 }

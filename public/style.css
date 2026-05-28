@@ -7,10 +7,8 @@
       "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
-    --color-amber-200: oklch(92.4% 0.12 95.746);
-    --color-amber-400: oklch(82.8% 0.189 84.429);
     --color-amber-800: oklch(47.3% 0.137 46.201);
-    --color-green-400: oklch(79.2% 0.209 151.711);
+    --color-slate-700: oklch(37.2% 0.044 257.287);
     --color-gray-400: oklch(70.7% 0.022 261.325);
     --color-gray-500: oklch(55.1% 0.027 264.364);
     --spacing: 0.25rem;
@@ -184,17 +182,14 @@
   .static {
     position: static;
   }
-  .left-1 {
-    left: calc(var(--spacing) * 1);
-  }
-  .left-1\/2 {
-    left: calc(1 / 2 * 100%);
-  }
   .mx-auto {
     margin-inline: auto;
   }
   .mt-1 {
     margin-top: calc(var(--spacing) * 1);
+  }
+  .block {
+    display: block;
   }
   .contents {
     display: contents;
@@ -208,53 +203,26 @@
   .table {
     display: table;
   }
-  .w-9 {
-    width: calc(var(--spacing) * 9);
-  }
-  .w-9\/12 {
-    width: calc(9 / 12 * 100%);
-  }
   .w-\[min\(90\%\,800px\)\] {
     width: min(90%, 800px);
   }
   .w-full {
     width: 100%;
   }
-  .w-max {
-    width: max-content;
-  }
   .flex-1 {
     flex: 1;
-  }
-  .flex-grow {
-    flex-grow: 1;
   }
   .grow {
     flex-grow: 1;
   }
-  .border-collapse {
-    border-collapse: collapse;
-  }
   .transform {
     transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,);
-  }
-  .resize {
-    resize: both;
   }
   .flex-col {
     flex-direction: column;
   }
-  .flex-wrap {
-    flex-wrap: wrap;
-  }
-  .justify-between {
-    justify-content: space-between;
-  }
   .gap-1 {
     gap: calc(var(--spacing) * 1);
-  }
-  .gap-2 {
-    gap: calc(var(--spacing) * 2);
   }
   .justify-self-center {
     justify-self: center;
@@ -268,20 +236,17 @@
     border-style: var(--tw-border-style);
     border-width: 1px;
   }
-  .bg-amber-400 {
-    background-color: var(--color-amber-400);
-  }
   .bg-amber-800 {
     background-color: var(--color-amber-800);
   }
   .bg-gray-500 {
     background-color: var(--color-gray-500);
   }
-  .bg-green-400 {
-    background-color: var(--color-green-400);
+  .bg-slate-700 {
+    background-color: var(--color-slate-700);
   }
-  .p-1 {
-    padding: calc(var(--spacing) * 1);
+  .p-2 {
+    padding: calc(var(--spacing) * 2);
   }
   .px-2 {
     padding-inline: calc(var(--spacing) * 2);
@@ -296,19 +261,15 @@
     font-size: var(--text-2xl);
     line-height: var(--tw-leading, var(--text-2xl--line-height));
   }
-  .text-amber-200 {
-    color: var(--color-amber-200);
+  .lowercase {
+    text-transform: lowercase;
   }
-  .underline {
-    text-decoration-line: underline;
+  .uppercase {
+    text-transform: uppercase;
   }
   .shadow {
     --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 1px 2px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
-  }
-  .outline {
-    outline-style: var(--tw-outline-style);
-    outline-width: 1px;
   }
   .blur {
     --tw-blur: blur(8px);
@@ -413,11 +374,6 @@
   inherits: false;
   initial-value: 0 0 #0000;
 }
-@property --tw-outline-style {
-  syntax: "*";
-  inherits: false;
-  initial-value: solid;
-}
 @property --tw-blur {
   syntax: "*";
   inherits: false;
@@ -494,7 +450,6 @@
       --tw-ring-offset-width: 0px;
       --tw-ring-offset-color: #fff;
       --tw-ring-offset-shadow: 0 0 #0000;
-      --tw-outline-style: solid;
       --tw-blur: initial;
       --tw-brightness: initial;
       --tw-contrast: initial;

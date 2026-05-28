@@ -18,6 +18,7 @@ app
 app.onError((err, c) => {
     if (err instanceof AppError)
         return c.json({errors: [err.message]}, err.status ?? HttpStatusCode.INTERNAL_SERVER_ERROR)
+    console.error(err)
     return c.json({errors: ["Something went wrong."]}, HttpStatusCode.INTERNAL_SERVER_ERROR)
 })
 

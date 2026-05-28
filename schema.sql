@@ -3,7 +3,7 @@ CREATE TABLE users (
     user_id TEXT PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
     email TEXT UNIQUE NOT NULL,
-    email_verified INT NOT NULL DEFAULT 0 CHECK (email_verified IN (0,1)),
+    email_verified_at INT, -- epoch timestamp
     password TEXT NOT NULL,
     image TEXT,
     name TEXT,

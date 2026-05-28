@@ -1,10 +1,11 @@
-import titleCase from "../../utils/titleCase"
+import { Form } from "../components/Form"
+import { FormInput } from "../components/FormInput"
 
 export function Signup() {
     return (
         <div class="w-full mx-auto">
             <h1 class="text-2xl text-center">Register</h1>
-            <form id="signup-form" class="flex flex-col gap-1" action="/signup" method="post">
+            <Form id="signup-form" action="/signup" method="post">
                 <FormInput
                     id="username"
                     required
@@ -26,24 +27,14 @@ export function Signup() {
                     type="password"
                     required
                 />
-                <button class="py-1 px-2 bg-amber-800 justify-self-center mt-1 disabled:bg-gray-400" type="submit">Submit</button>
-            </form>
+            </Form>
+            <small class="block text-center">
+                <a href="/signin">
+                    Already have an account?
+                </a>
+            </small>
             <pre id="signup-errors"></pre>
         </div>
     )
 }
 
-type Props = {
-    label?: string
-    id: string,
-    type?: string
-} & Record<string, unknown>
-
-function FormInput({ label, id, type = "text", ...rest }: Props) {
-    return (
-        <div class="flex flex-col flex-1">
-            <label htmlFor={id}> {label ?? titleCase(id)} </label>
-            <input {...rest} class="bg-gray-500 w-full" id={id} type={type} name={id}  />
-        </div>
-    )
-}
