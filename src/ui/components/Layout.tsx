@@ -1,7 +1,9 @@
+import { Style } from "hono/css";
+import type { Child } from "hono/jsx";
 import type { JSX } from "hono/jsx/jsx-runtime";
 
 type Props = {
-    children: JSX.Element;
+    children: Child;
     title?: string;
 };
 
@@ -17,6 +19,7 @@ function Document({ children, title }: Props) {
                 <title> {title} </title>
             </head>
             <body>
+                <Style  />
                 {children}
             </body>
         </html>

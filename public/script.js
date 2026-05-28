@@ -13,9 +13,11 @@ signupForm?.addEventListener("submit", async e => {
         body: new URLSearchParams(fd)
     })
     submitBtn.disabled = false;
-    if (!res.ok && res.headers.get("Content-Type") == "application/json") {
+    if (res.ok) return location.replace("/")
+    if (res.headers.get("Content-Type") == "application/json") {
         const data = await res.json();
-        signupErrorsDiv.textContent = JSON.stringify(data.errors, null, 4)
-
+        signupErrorsDiv.textContent = JSON.stringify(data.errors, null, 4);
+        return;
     }
+    signupErrorsDiv.textContent = "Something went wrong. Please try again later"
 })

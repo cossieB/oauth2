@@ -8,4 +8,10 @@ declare module 'hono' {
       head: { title: string }
     ): Response | Promise<Response>
   }
+  export interface ContextRenderer {
+    (
+      content: string | Promise<string>,
+      props: { title: string }
+    ): Response
+  }
 }

@@ -7,7 +7,7 @@ export const SignupSchema = z.object({
         .string()
         .min(3, "Username must be between 3 and 15 characters")
         .max(15, "Username must be between 3 and 15 characters")
-        .regex(/^\w+$/),
+        .regex(/^\w+$/, "Username should only have letters and underscores"),
     email: z.email("Email is required"),
     password: z
         .string("Password is required")

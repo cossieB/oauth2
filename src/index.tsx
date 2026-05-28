@@ -1,18 +1,24 @@
 import { factory } from './utils/createHono'
-import { signupRoutes } from './routes/signup'
-import { renderer } from './middleware/renderer'
-import { csrf } from 'hono/csrf'
+import { pagesRoutes } from './routes/pages'
+import { authenticateMware } from './middleware/authMware'
+import { authRoutes } from './routes/auth'
+import { AppError } from './utils/AppError'
+import { HttpStatusCode } from './utils/statusCodes'
 
 const app = factory.createApp()
 
 app
-    .use("/pages/*", csrf(), renderer)
+    .use(authenticateMware)
     .get('/', async (c) => {
-        const statement = c.env.DB.prepare("SELECT 1");
-        await statement.raw()
         return c.text('Hello Hono!')
     })
-    .route("/", signupRoutes)
+    .route("/", pagesRoutes)
+    .route("/", authRoutes)
 
+app.onError((err, c) => {
+    if (err instanceof AppError)
+        return c.json({errors: [err.message]}, err.status ?? HttpStatusCode.INTERNAL_SERVER_ERROR)
+    return c.json({errors: ["Something went wrong."]}, HttpStatusCode.INTERNAL_SERVER_ERROR)
+})
 
 export default app
