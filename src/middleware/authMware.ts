@@ -1,7 +1,9 @@
 import { deleteCookie, getSignedCookie } from "hono/cookie";
 import { factory } from "../utils/createHono";
 import { AUTH_COOKIE_NAME } from "../utils/constants";
-import type { User } from "../utils/types";
+import { type MyEnv, type User } from "../utils/types";
+import { HttpStatusCode } from "../utils/statusCodes";
+import { createMiddleware } from "hono/factory";
 
 export const authenticateMware = factory.createMiddleware(async (c, next) => {
     const sessionId = await getSignedCookie(c, c.env.COOKIE_SECRET, AUTH_COOKIE_NAME)
@@ -12,5 +14,16 @@ export const authenticateMware = factory.createMiddleware(async (c, next) => {
     const user = await c.env.KV.get(sessionId, "json") as User | null;
     if (!user) deleteCookie(c, AUTH_COOKIE_NAME)
     c.set("user", user)
+    c.set("sessionId", sessionId)
+    return next()
+})
+type T = MyEnv & {
+    Variables: {
+        user: User,
+        sessionId: string
+    }
+}
+export const authedMware = createMiddleware<T>(async (c, next) => {
+    if (!c.var.user) return c.redirect("/signin", HttpStatusCode.TEMPORARY_REDIRECT);
     return next()
 })

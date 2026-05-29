@@ -2,6 +2,7 @@ export type MyEnv = {
     Bindings: CloudflareBindings,
     Variables: {
         user: User | null
+        sessionId?: string
     }
 }
 

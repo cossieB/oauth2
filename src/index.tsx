@@ -10,7 +10,8 @@ const app = factory.createApp()
 app
     .use(authenticateMware)
     .get('/', async (c) => {
-        return c.text('Hello Hono!')
+        const redirect = c.var.user ? "/profile" : "/signin?redirect=/profile"
+        return c.redirect(redirect, HttpStatusCode.TEMPORARY_REDIRECT)
     })
     .route("/", pagesRoutes)
     .route("/", authRoutes)

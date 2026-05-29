@@ -23,14 +23,15 @@
     }
   ],
   "vars": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "STORAGE_DOMAIN": "https://r2.cossie.dev"
   },
-  // "r2_buckets": [
-  //   {
-  //     "binding": "MY_BUCKET",
-  //     "bucket_name": "my-bucket"
-  //   }
-  // ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "clipz"
+    }
+  ],
   // "ai": {
   //   "binding": "AI"
   // },

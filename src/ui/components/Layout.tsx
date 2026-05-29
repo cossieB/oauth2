@@ -1,6 +1,7 @@
 import { Style } from "hono/css";
 import type { Child } from "hono/jsx";
 import type { JSX } from "hono/jsx/jsx-runtime";
+import { Nav } from "./Nav";
 
 type Props = {
     children: Child;
@@ -29,9 +30,11 @@ function Document({ children, title }: Props) {
 export function Layout({ children, title = "OAuth2.0" }: Props) {
     return (
         <Document title={title}>
+            <Nav />
             <main class="w-[min(90%,800px)] mx-auto">
                 {children}
             </main>
         </Document>
     )
 }
+

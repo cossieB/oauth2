@@ -1,8 +1,8 @@
 import z from "zod";
 
 export const PasswordSchema = z
-        .string("Password is required")
-        .min(8)
+    .string("Password is required")
+    .min(8)
 
 
 export const SignupSchema = z.object({
@@ -14,7 +14,7 @@ export const SignupSchema = z.object({
         .max(15, "Username must be between 3 and 15 characters")
         .regex(/^\w+$/, "Username should only have letters and underscores"),
     email: z.email("Email is required"),
-    password: PasswordSchema ,
+    password: PasswordSchema,
     confirmPassword: z.string()
 }).superRefine((data, ctx) => {
     if (data.password != data.confirmPassword) {
@@ -29,4 +29,16 @@ export const SignupSchema = z.object({
 export const SigninSchema = z.object({
     identifier: z.string(),
     password: z.string()
+})
+
+export const ProfileSchema = z.object({
+    name: z.string().optional(),
+    surname: z.string().optional(),
+    image: z.preprocess(
+        value => value === "" ? undefined : value,
+        z.instanceof(File)
+            .optional()
+            .refine(file => !file || file.type.startsWith("image/"), "Only images are allowed")
+            .refine(file => !file || file.size < 2 * 1024 * 1024, "Maximum allowed file size is 2 MB")
+    )
 })
