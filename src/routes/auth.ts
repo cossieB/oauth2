@@ -9,10 +9,18 @@ import * as authRepository from "../repositories/userRepository";
 import { HttpStatusCode } from "../utils/statusCodes";
 import * as cookieService from "../services/cookieService";
 import { authedMware } from "../middleware/authMware";
+import { getConnInfo } from "hono/cloudflare-workers";
+import type { Context } from "hono";
+import type { MyEnv } from "../utils/types";
 
 export const authRoutes = factory.createApp()
 
 // authRoutes.use(csrf())
+
+const getClientInfo = (c: Context<MyEnv>) => ({
+    ip: getConnInfo(c).remote.address ?? "127.0.0.1",
+    userAgent: c.req.header("User-Agent") ?? ""
+})
 
 authRoutes
     .post(
@@ -20,10 +28,9 @@ authRoutes
         zValidator("form", SignupSchema, validatorHook),
         async c => {
             const form = c.req.valid("form");
-            const hash = await hashPassword(form.password)
-            const record = await authRepository.createUser({ ...form, hash }, c.env.DB);
-            const sessionId = randomUUID();
-            await c.env.KV.put(sessionId, JSON.stringify(record), { expirationTtl: COOKIE_TTL })
+            const passwordHash = await hashPassword(form.password);
+            const clientInfo = getClientInfo(c)
+            const sessionId = await authRepository.createUser({ ...form, passwordHash }, clientInfo);
             await cookieService.setSecureCookie(sessionId, c)
             return c.text("OK")
         }
@@ -34,13 +41,13 @@ authRoutes
         async c => {
             const badRequestResponse = c.json({ errors: ["Invalid credentials"] }, HttpStatusCode.BAD_REQUEST);
             const { identifier, password } = c.req.valid("form")
-            const record = await authRepository.getUser(identifier, c.env.DB)
+            const record = await authRepository.getUser(identifier)
             if (!record) return badRequestResponse
-            const isValid = await verifyPassword(password, record.password);
+            const isValid = await verifyPassword(password, record.passwordHash);
             if (!isValid) return badRequestResponse;
-            const sessionId = randomUUID();
-            const { password: p, email_verified_at, ...rest } = record
-            await c.env.KV.put(sessionId, JSON.stringify(rest), { expirationTtl: COOKIE_TTL })
+            const clientInfo = getClientInfo(c)
+            const {insertSession, sessionId} = authRepository.createSession(record.userId, clientInfo);
+            await insertSession;
             await cookieService.setSecureCookie(sessionId, c)
             return c.text("OK")
         }
@@ -61,7 +68,7 @@ authRoutes
             const { name, surname, image } = c.req.valid("form");
             let key: string | undefined
             if (image) {
-                key = `/oauth/users/${c.var.user.user_id}`;
+                key = `/oauth/users/${c.var.user.userId}`;
                 const buffer = await image.arrayBuffer();
                 await c.env.R2.put(key, buffer, {
                     httpMetadata: {
@@ -69,15 +76,10 @@ authRoutes
                     }
                 })
             }
-            const record = key ?
-                await c.env.DB.prepare("UPDATE users SET name = ?, surname = ?, image = ? WHERE user_id = ? RETURNING user_id, username, email, image, name, surname")
-                    .bind(name, surname, key, c.var.user.user_id)
-                    .first() :
-                await c.env.DB.prepare("UPDATE users SET name = ?, surname = ? WHERE user_id = ? RETURNING user_id, username, email, image, name, surname")
-                    .bind(name, surname, c.var.user.user_id)
-                    .first()
-                    console.log(await c.env.KV.get(c.var.sessionId))
-            await c.env.KV.put(c.var.sessionId, JSON.stringify(record), {expirationTtl: COOKIE_TTL})
+            const record = await authRepository.updateUser({
+                name, surname, image: key
+            })
+
             return c.json(record)
         }
     )

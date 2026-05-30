@@ -9,6 +9,7 @@
   "dependencies": {
     "@hono/zod-validator": "^0.8.0",
     "@tailwindcss/cli": "^4.3.0",
+    "drizzle-orm": "^1.0.0-rc.3",
     "hono": "^4.12.21",
     "jose": "^6.2.3",
     "tailwindcss": "^4.3.0",
@@ -16,6 +17,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
+    "drizzle-kit": "^1.0.0-rc.3",
     "wrangler": "^4.4.0"
   }
 }

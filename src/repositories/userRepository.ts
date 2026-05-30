@@ -1,25 +1,32 @@
 import { randomUUID } from "node:crypto";
 import titleCase from "../utils/titleCase";
 import { AppError } from "../utils/AppError";
-import type { User } from "../utils/types";
+import { db } from "../drizzle/db";
+import { sessions, users } from "../drizzle/schema";
+import type { User } from "../models";
 
 type U = {
     username: string,
     email: string,
-    hash: string
+    passwordHash: string,
 }
 
-export async function createUser(user: U, DB: D1Database) {
+type C = {
+    ip: string,
+    userAgent: string
+}
+
+export async function createUser(user: U, client: C) {
+    const userId = randomUUID()
     try {
-        return await DB
-            .prepare("INSERT INTO users (user_id, username, email, password) VALUES (?,?,?,?) RETURNING user_id, username, email, image")
-            .bind(
-                randomUUID(),
-                user.username,
-                user.email,
-                user.hash,
-            ).first() as { user_id: string, username: string, email: string, image: string };
-    } 
+        const insertUser = db.insert(users).values({
+            ...user,
+            userId
+        })
+        const {insertSession, sessionId} = createSession(userId, client)
+        await db.batch([insertUser, insertSession])
+        return sessionId
+    }
     catch (error) {
         const duplicateField = getDuplicateField((error as Error).message)
         if (!duplicateField) throw error
@@ -27,10 +34,43 @@ export async function createUser(user: U, DB: D1Database) {
     }
 }
 
-export async function getUser(identifier: string, DB: D1Database) {
-    return await DB.prepare("SELECT * FROM users WHERE username = ? OR email = ?")
-        .bind(identifier, identifier)
-        .first() as User | null
+export function createSession(userId: string, client: C) {
+    const sessionId = randomUUID();
+    const now = new Date()
+    const insertSession = db.insert(sessions).values({
+        createdAt: now,
+        expiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+        lastActivity: now,
+        sessionId,
+        userId,
+        ...client  
+    })
+    return {insertSession, sessionId}
+}
+
+export function getUser(identifier: string) {
+    return db.query.users.findFirst({
+        where: {
+            OR: [{
+                email: identifier,
+                username: identifier
+            }]
+        },
+        columns: {
+            userId: true,
+            emailVerifiedAt: true,
+            passwordHash: true
+        }
+    })
+}
+
+export function updateUser(user: Pick<Partial<User>, "name" | "surname" | "image">) {
+    return db.update(users).set(user).returning({
+        userId: users.userId,
+        name: users.name,
+        surname: users.surname,
+        image: users.image
+    })
 }
 
 function getDuplicateField(errorMessage: string) {

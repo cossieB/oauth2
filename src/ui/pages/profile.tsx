@@ -5,8 +5,8 @@ import type { MyEnv } from "../../utils/types";
 
 export function ProfilePage() {
     const c = useRequestContext<MyEnv>()
-    const {name, surname, image} = c.var.user!
-
+    const { name, surname, image } = c.var.user!
+    const imgSrc = image ? c.env.STORAGE_DOMAIN + image : "/favicon.ico"
     return (
         <div class="w-full mx-auto">
             <h1 class="text-2xl text-center">Profile</h1>
@@ -15,21 +15,21 @@ export function ProfilePage() {
                     <FormInput
                         id="name"
                         value={name}
-                        
+
                     />
                     <FormInput
                         id="surname"
                         value={surname}
                     />
                 </div>
-                <FormInput
-                    id="image"
-                    type="file"
-                    accept="image/*"
-                />
-                {image && (
-                    <img src={c.env.STORAGE_DOMAIN + image} class="h-10 w-10 object-cover" alt="" />
-                )}
+                <div>
+                    <img src={imgSrc} class="h-10 w-10 object-cover" alt="" />
+                    <FormInput
+                        id="image"
+                        type="file"
+                        accept="image/*"
+                    />
+                </div>
             </Form>
             <pre></pre>
         </div>
