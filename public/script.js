@@ -1,4 +1,4 @@
-function submitForm(hasBinaryData = false) {
+function submitForm(hasBinaryData = false, redirect = "/profile") {
     /**@param {SubmitEvent} e */
     return async e => {
         e.preventDefault();
@@ -11,7 +11,7 @@ function submitForm(hasBinaryData = false) {
             body
         })
         submitBtn.disabled = false;
-        if (res.ok && !hasBinaryData) return location.replace("/");
+        if (res.ok) return location.replace(redirect);
         const errorsDiv = document.querySelector("pre")
         if (res.headers.get("Content-Type") == "application/json") {
             const data = await res.json();
@@ -29,6 +29,7 @@ function submitForm(hasBinaryData = false) {
 document.getElementById("signup-form")?.addEventListener("submit", submitForm())
 document.getElementById("signin-form")?.addEventListener("submit", submitForm())
 document.getElementById("profile-form")?.addEventListener("submit", submitForm(true))
+document.getElementById("add-app-form")?.addEventListener("submit", submitForm(true, "/applications/owned"))
 
 const authLink = document.querySelectorAll("small>a").forEach(link => {
     link.addEventListener("click", e => {

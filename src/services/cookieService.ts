@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import { deleteCookie, getSignedCookie, setSignedCookie,  } from "hono/cookie";
 import type { MyEnv } from "../utils/types";
-import type { User } from "../models";
+import type { User } from "../utils/models";
 
 const AUTH_COOKIE_NAME = "iff"
 const COOKIE_TTL = 60 * 60 * 24 * 28

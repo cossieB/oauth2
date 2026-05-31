@@ -30,7 +30,7 @@ export const authenticateMware = factory.createMiddleware(async (c, next) => {
         with: {
             user: {
                 columns: {
-                    passwordHash: false,            
+                    passwordHash: false,
                 },
             }
         }
@@ -41,12 +41,16 @@ export const authenticateMware = factory.createMiddleware(async (c, next) => {
         c.set("user", null);
         return next()
     }
-    await Promise.all([db.update(sessions).set({lastActivity: new Date}), dataCookie.set(session.user, c)])
+    await Promise.all([db.update(sessions).set({ lastActivity: new Date }), dataCookie.set(session.user, c)])
     c.set("user", session.user)
     return next()
 })
 
 export const authedMware = createMiddleware<Authed>(async (c, next) => {
-    if (!c.var.user) return c.redirect("/signin", HttpStatusCode.TEMPORARY_REDIRECT);
-    return next()
+    if (c.var.user)
+        return next()
+    const url = new URL(c.req.url)
+    url.searchParams.append("redirect", url.pathname)
+    url.pathname = "/signin"
+    return c.redirect("/signin", HttpStatusCode.TEMPORARY_REDIRECT);
 })

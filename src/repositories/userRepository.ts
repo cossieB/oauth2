@@ -3,7 +3,7 @@ import titleCase from "../utils/titleCase";
 import { AppError } from "../utils/AppError";
 import { db } from "../drizzle/db";
 import { sessions, users } from "../drizzle/schema";
-import type { User } from "../models";
+import type { User } from "../utils/models";
 
 type U = {
     username: string,

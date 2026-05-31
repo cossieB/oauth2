@@ -28,9 +28,14 @@ export const sessions = sqliteTable("sessions", {
 export const clients = sqliteTable("clients", {
 	clientId: text("client_id").primaryKey(),
 	name: text().notNull(),
+	/** Application owner */
 	userId: text("user_id").notNull().references(() => users.userId, { onDelete: "cascade" }),
 	redirectUri: text("redirect_uri").notNull(),
-	logo: text().notNull(),
+	logo: text(),
+	description: text().notNull().default(""),
+	homepage: text(),
+	privacyPolicyLink: text("privacy_policy_link"),
+	tosLink: text("tos_link")
 });
 
 export const keys = sqliteTable("keys", {
@@ -42,7 +47,7 @@ export const keys = sqliteTable("keys", {
 export const userConsent = sqliteTable("user_consent", {
 	userId: text("user_id").notNull().references(() => users.userId, { onDelete: "cascade" }),
 	clientId: text("client_id").notNull().references(() => clients.clientId, { onDelete: "cascade" }),
-	scopes: text("scopes", { mode: "json" }).default(sql`"[]"`).notNull(),
+	scopes: text("scopes", { mode: "json" }).$type<string[]>().default(sql`"[]"`).notNull(),
 	createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
 	modifiedOn: integer("modified_on", { mode: "timestamp_ms" }),
 });

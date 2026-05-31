@@ -1,5 +1,6 @@
 import { useRequestContext } from "hono/jsx-renderer"
 import { type MyEnv } from "../../utils/types"
+import { A } from "./A"
 
 export function Nav() {
     const c = useRequestContext<MyEnv>()
@@ -12,11 +13,11 @@ export function Nav() {
                         label="Profile"
                     />
                     <NavLink
-                        href="/my-apps"
+                        href="/applications/owned"
                         label="Your Apps"
                     />
                     <NavLink
-                        href="/approved-apps"
+                        href="/applications/approved"
                         label="Approved Apps"
                     />
                 </>
@@ -37,11 +38,10 @@ export function Nav() {
 }
 
 function NavLink({ href, label }: { href: string, label: string }) {
-    const c = useRequestContext<MyEnv>()
-    const pathMatches = c.req.path === href
+    
     return (
         <li>
-            <a class={`hover:underline underline-offset-2 ${pathMatches ? "text-orange-600" : ""}`} href={href}> {label} </a>
+            <A href={href}> {label} </A>
         </li>
     )
 }

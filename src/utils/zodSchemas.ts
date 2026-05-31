@@ -47,3 +47,27 @@ export const ProfileSchema = z.object({
             .refine(file => !file || file.size < 2 * 1024 * 1024, "Maximum allowed file size is 2 MB")
     )
 })
+
+export const AppCreateSchema = z.object({
+    name: z.string().max(50),
+    redirectUri: z.url(),
+    homepage: z.preprocess(
+        value => value === "" ? undefined : value,
+        z.url().optional()
+    ),
+    privacyPolicyLink: z.preprocess(
+        value => value === "" ? undefined : value,
+        z.url().optional()
+    ),
+    tosLink: z.preprocess(
+        value => value === "" ? undefined : value,
+        z.url().optional()
+    ),
+    logo: z.preprocess(
+        value => value === "" ? undefined : value,
+        z.instanceof(File)
+            .optional()
+            .refine(file => !file || file.type.startsWith("image/"), "Only images are allowed")
+            .refine(file => !file || file.size < 2 * 1024 * 1024, "Maximum allowed file size is 2 MB")
+    )
+})

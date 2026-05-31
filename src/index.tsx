@@ -4,6 +4,7 @@ import { authenticateMware } from './middleware/authMware'
 import { authRoutes } from './routes/auth'
 import { AppError } from './utils/AppError'
 import { HttpStatusCode } from './utils/statusCodes'
+import { applicationsRoutes } from './routes/applications'
 
 const app = factory.createApp()
 
@@ -15,6 +16,7 @@ app
     })
     .route("/", pagesRoutes)
     .route("/", authRoutes)
+    .route("/", applicationsRoutes)
 
 app.onError((err, c) => {
     if (err instanceof AppError)

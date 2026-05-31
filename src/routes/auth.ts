@@ -1,6 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import { factory } from "../utils/createHono";
-import { ProfileSchema, SigninSchema, SignupSchema } from "../zodSchemas";
+import { ProfileSchema, SigninSchema, SignupSchema } from "../utils/zodSchemas";
 import { validatorHook } from "../utils/formateZodError";
 import { hashPassword, verifyPassword } from "../services/passwordService";
 import * as authRepository from "../repositories/userRepository";

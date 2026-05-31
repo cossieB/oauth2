@@ -6,6 +6,9 @@ import { alreadyLoggedIn } from "../middleware/alreadyLoggedIn";
 import { SigninPage } from "../ui/pages/signin";
 import { authedMware } from "../middleware/authMware";
 import { ProfilePage } from "../ui/pages/profile";
+import { db } from "../drizzle/db";
+import { YourApplications } from "../ui/pages/applications";
+import { AddApplication } from "../ui/pages/add-app";
 
 export const pagesRoutes = factory.createApp()
 
@@ -21,3 +24,18 @@ pagesRoutes
     )
     .get("/profile", authedMware,
         c => c.render(<ProfilePage />, { title: "Profile" }))
+    .get(
+        "/applications/owned", authedMware,
+        async c => {
+            const apps = await db.query.clients.findMany({
+                where: {
+                    userId: c.var.user.userId
+                }
+            })
+            return c.render(<YourApplications apps={apps} />, {title: "Your Applications"})
+        }
+    )
+    .get(
+        "/applications/create", authedMware,
+        c => c.render(<AddApplication />, {title: "Add Application"})
+    )
