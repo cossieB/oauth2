@@ -23,7 +23,7 @@ export async function createUser(user: U, client: C) {
             ...user,
             userId
         })
-        const {insertSession, sessionId} = createSession(userId, client)
+        const { insertSession, sessionId } = createSession(userId, client)
         await db.batch([insertUser, insertSession])
         return sessionId
     }
@@ -43,9 +43,9 @@ export function createSession(userId: string, client: C) {
         lastActivity: now,
         sessionId,
         userId,
-        ...client  
+        ...client
     })
-    return {insertSession, sessionId}
+    return { insertSession, sessionId }
 }
 
 export function getUser(identifier: string) {
@@ -65,12 +65,18 @@ export function getUser(identifier: string) {
 }
 
 export function updateUser(user: Pick<Partial<User>, "name" | "surname" | "image">) {
-    return db.update(users).set(user).returning({
-        userId: users.userId,
-        name: users.name,
-        surname: users.surname,
-        image: users.image
-    })
+    return db
+        .update(users)
+        .set(user)
+        .returning({
+            userId: users.userId,
+            name: users.name,
+            surname: users.surname,
+            image: users.image,
+            email: users.email,
+            emailVerifiedAt: users.emailVerifiedAt,
+            username: users.username
+        })
 }
 
 function getDuplicateField(errorMessage: string) {

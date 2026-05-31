@@ -22,13 +22,13 @@ export function ProfilePage() {
                         value={surname}
                     />
                 </div>
-                <div>
-                    <img src={imgSrc} class="h-10 w-10 object-cover" alt="" />
+                <div class="flex items-center">
                     <FormInput
                         id="image"
                         type="file"
                         accept="image/*"
                     />
+                    <img src={imgSrc} class="h-10 w-10 object-cover" alt="" />                    
                 </div>
             </Form>
             <pre></pre>

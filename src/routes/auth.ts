@@ -1,17 +1,15 @@
 import { zValidator } from "@hono/zod-validator";
 import { factory } from "../utils/createHono";
 import { ProfileSchema, SigninSchema, SignupSchema } from "../zodSchemas";
-import { randomUUID } from "node:crypto"
 import { validatorHook } from "../utils/formateZodError";
-import { AUTH_COOKIE_NAME, COOKIE_TTL } from "../utils/constants";
 import { hashPassword, verifyPassword } from "../services/passwordService";
 import * as authRepository from "../repositories/userRepository";
 import { HttpStatusCode } from "../utils/statusCodes";
-import * as cookieService from "../services/cookieService";
 import { authedMware } from "../middleware/authMware";
 import { getConnInfo } from "hono/cloudflare-workers";
 import type { Context } from "hono";
 import type { MyEnv } from "../utils/types";
+import { authCookie, dataCookie } from "../services/cookieService";
 
 export const authRoutes = factory.createApp()
 
@@ -31,7 +29,7 @@ authRoutes
             const passwordHash = await hashPassword(form.password);
             const clientInfo = getClientInfo(c)
             const sessionId = await authRepository.createUser({ ...form, passwordHash }, clientInfo);
-            await cookieService.setSecureCookie(sessionId, c)
+            await authCookie.set(sessionId, c)
             return c.text("OK")
         }
     )
@@ -48,14 +46,14 @@ authRoutes
             const clientInfo = getClientInfo(c)
             const {insertSession, sessionId} = authRepository.createSession(record.userId, clientInfo);
             await insertSession;
-            await cookieService.setSecureCookie(sessionId, c)
+            await authCookie.set(sessionId, c)
             return c.text("OK")
         }
     )
     .get(
         "/logout",
         async c => {
-            const sessionId = cookieService.clear(AUTH_COOKIE_NAME, c);
+            const sessionId = authCookie.delete(c);
             sessionId && await c.env.KV.delete(sessionId);
             return c.redirect("/")
         }
@@ -76,9 +74,10 @@ authRoutes
                     }
                 })
             }
-            const record = await authRepository.updateUser({
+            const record = (await authRepository.updateUser({
                 name, surname, image: key
-            })
+            }))[0]
+            dataCookie.delete(c)
 
             return c.json(record)
         }

@@ -3,7 +3,12 @@ import type { User } from "../models"
 export type MyEnv = {
     Bindings: CloudflareBindings,
     Variables: {
-        user?: Pick<User, "userId" | "email" | "image" | "surname" | "username" | "name"> | null
-        sessionId?: string
+        user?: Omit<User, "passwordHash"> | null
+    }
+}
+
+export type Authed = MyEnv & {
+    Variables: {
+        user: NonNullable<MyEnv["Variables"]['user']>
     }
 }

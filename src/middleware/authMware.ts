@@ -1,40 +1,52 @@
-import { deleteCookie, getSignedCookie } from "hono/cookie";
 import { factory } from "../utils/createHono";
-import { AUTH_COOKIE_NAME } from "../utils/constants";
-import { type MyEnv } from "../utils/types";
+import { type Authed } from "../utils/types";
 import { HttpStatusCode } from "../utils/statusCodes";
 import { createMiddleware } from "hono/factory";
 import { db } from "../drizzle/db";
-import type { User } from "../models";
+import { sessions } from "../drizzle/schema";
+import { authCookie, dataCookie } from "../services/cookieService";
 
 export const authenticateMware = factory.createMiddleware(async (c, next) => {
-    const sessionId = await getSignedCookie(c, c.env.COOKIE_SECRET, AUTH_COOKIE_NAME)
+
+    const cachedUser = await dataCookie.getUser(c);
+    if (cachedUser) {
+        c.set("user", cachedUser)
+        return next()
+    }
+    const sessionId = await authCookie.get(c);
     if (!sessionId) {
         c.set("user", null);
         return next()
     }
-    const user = await db.query.users.findFirst({
+    const session = await db.query.sessions.findFirst({
         where: {
-            sessions: {
-                sessionId
-            }
+            AND: [{
+                sessionId,
+                expiresAt: {
+                    gt: new Date
+                }
+            }]
         },
-        columns: {
-            passwordHash: false,            
+        with: {
+            user: {
+                columns: {
+                    passwordHash: false,            
+                },
+            }
         }
     })
-    if (!user) deleteCookie(c, AUTH_COOKIE_NAME);
-    c.set("user", user)
-    c.set("sessionId", sessionId)
+    if (!session || !session.user) {
+        authCookie.delete(c)
+        dataCookie.delete(c)
+        c.set("user", null);
+        return next()
+    }
+    await Promise.all([db.update(sessions).set({lastActivity: new Date}), dataCookie.set(session.user, c)])
+    c.set("user", session.user)
     return next()
 })
-type T = MyEnv & {
-    Variables: {
-        user: User,
-        sessionId: string
-    }
-}
-export const authedMware = createMiddleware<T>(async (c, next) => {
+
+export const authedMware = createMiddleware<Authed>(async (c, next) => {
     if (!c.var.user) return c.redirect("/signin", HttpStatusCode.TEMPORARY_REDIRECT);
     return next()
 })
