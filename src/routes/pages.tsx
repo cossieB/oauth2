@@ -39,3 +39,16 @@ pagesRoutes
         "/applications/create", authedMware,
         c => c.render(<AddApplication />, {title: "Add Application"})
     )
+    .get(
+        "/applications/:clientId", authedMware,
+        async c => {
+            const app = await db.query.clients.findFirst({
+                where: {
+                    clientId: c.req.param("clientId"),
+                    userId: c.var.user.userId
+                }
+            })
+            if (!app) return c.notFound();
+            return c.render(<AddApplication app={app} />, {title: "Edit Application"})
+        }
+    )
