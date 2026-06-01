@@ -22,10 +22,6 @@ function submitForm(hasBinaryData = false, redirect = "/profile") {
     }
 }
 
-/**
- * @type {HTMLFormElement | null}
- */
-
 document.getElementById("signup-form")?.addEventListener("submit", submitForm())
 document.getElementById("signin-form")?.addEventListener("submit", submitForm())
 document.getElementById("profile-form")?.addEventListener("submit", submitForm(true))
@@ -35,5 +31,19 @@ const authLink = document.querySelectorAll("small>a").forEach(link => {
     link.addEventListener("click", e => {
         e.preventDefault();
         location.replace(link.href)
+    })
+})
+
+document.querySelectorAll(".client-delete-btns").forEach(btn => {
+    btn.addEventListener("click", async e => {
+        const {clientname, clientid} = e.currentTarget.dataset
+        const confirmed = confirm(`Are you sure you want to delete ${clientname} and all related data?`)
+        if (!confirmed) return;
+        const res = await fetch(`/applications/${clientid}`, {
+            method: "DELETE"
+        })
+        const text = await res.text();
+        if (res.ok) return location.reload()
+        alert(text)
     })
 })
