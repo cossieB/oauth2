@@ -17,7 +17,7 @@ export function YourApplications({ apps }: Props) {
                     <img class="row-span-2" src={app.logo ?? "/favicon.ico"} alt="" />
                     <span class="col-span-1 font-bold"> {app.name} </span>
                     <span class="col-span-1"> {app.clientId} </span>
-                    <button data-clientId={app.clientId} data-clientName={app.name} class="row-start-1 row-end-3 col-start-3 col-end-4 place-self-center text-red-600 p-1 client-delete-btns">Delete</button>
+                    <button data-client-id={app.clientId} data-client-name={app.name} class="row-start-1 row-end-3 col-start-3 col-end-4 place-self-center text-red-600 p-1 client-delete-btns">Delete</button>
                     <A class="row-start-1 row-end-3 col-start-4 col-end-5 place-self-center pl-2" href={`/applications/${app.clientId}`}>Edit</A>
                 </div>
             )}

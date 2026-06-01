@@ -3,10 +3,10 @@ import z from "zod";
 export const PasswordSchema = z
     .string("Password is required")
     .min(8)
-    // .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    // .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    // .regex(/[0-9]/, "Password must contain at least one number")
-    // .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character")
+// .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+// .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+// .regex(/[0-9]/, "Password must contain at least one number")
+// .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character")
 
 export const SignupSchema = z.object({
     name: z.string().optional(),
@@ -70,4 +70,14 @@ export const AppCreateSchema = z.object({
             .refine(file => !file || file.type.startsWith("image/"), "Only images are allowed")
             .refine(file => !file || file.size < 2 * 1024 * 1024, "Maximum allowed file size is 2 MB")
     )
+})
+
+export const AuthorizeSchema = z.object({
+    response_type: z.literal("code"),
+    client_id: z.string(),
+    redirect_uri: z.url(),
+    scope: z.string().default(""),
+    state: z.string().optional(),
+    code_challenge: z.string(),
+    code_challenge_method: z.literal("S256")
 })

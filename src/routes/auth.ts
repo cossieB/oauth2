@@ -1,6 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import { factory } from "../utils/createHono";
-import { ProfileSchema, SigninSchema, SignupSchema } from "../utils/zodSchemas";
+import { AuthorizeSchema, ProfileSchema, SigninSchema, SignupSchema } from "../utils/zodSchemas";
 import { validatorHook } from "../utils/formateZodError";
 import { hashPassword, verifyPassword } from "../services/passwordService";
 import * as authRepository from "../repositories/userRepository";
@@ -10,6 +10,8 @@ import { getConnInfo } from "hono/cloudflare-workers";
 import type { Context } from "hono";
 import type { MyEnv } from "../utils/types";
 import { authCookie, dataCookie } from "../services/cookieService";
+import * as applicationRepository from "../repositories/applicationRepository"
+import { randomUUID } from "node:crypto";
 
 export const authRoutes = factory.createApp()
 
@@ -39,12 +41,12 @@ authRoutes
         async c => {
             const badRequestResponse = c.json({ errors: ["Invalid credentials"] }, HttpStatusCode.BAD_REQUEST);
             const { identifier, password } = c.req.valid("form")
-            const record = await authRepository.getUser(identifier)
+            const record = await authRepository.getUser(identifier);
             if (!record) return badRequestResponse
             const isValid = await verifyPassword(password, record.passwordHash);
             if (!isValid) return badRequestResponse;
             const clientInfo = getClientInfo(c)
-            const {insertSession, sessionId} = authRepository.createSession(record.userId, clientInfo);
+            const { insertSession, sessionId } = authRepository.createSession(record.userId, clientInfo);
             await insertSession;
             await authCookie.set(sessionId, c)
             return c.text("OK")
@@ -82,3 +84,24 @@ authRoutes
             return c.json(record)
         }
     )
+    .get(
+        "/authorize",
+        authedMware,
+        zValidator("query", AuthorizeSchema),
+        async c => {
+            const valid = c.req.valid("query");
+            const client = await applicationRepository.findById(valid.client_id)
+            if (!client) return c.json({ error: "Invalid client id" }, 403);
+            if (client.redirectUri != valid.redirect_uri) return c.json({ error: "Redirect URI Mismatch" }, 403);
+            // TODO consent UI
+            const code = randomUUID();
+            await c.env.KV.put(`codes:${code}`, JSON.stringify({
+                ...valid,
+                userId: c.var.user.userId
+            }), { expirationTtl: 60 * 5 })
+            const redirect = new URL(valid.redirect_uri);
+            redirect.searchParams.append("code", code)
+            if (valid.state) redirect.searchParams.append("state", valid.state);
+            return c.redirect(redirect, 307)
+        }
+    )    

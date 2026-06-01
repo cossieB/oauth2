@@ -51,10 +51,8 @@ export function createSession(userId: string, client: C) {
 export function getUser(identifier: string) {
     return db.query.users.findFirst({
         where: {
-            OR: [{
-                email: identifier,
-                username: identifier
-            }]
+            OR: [{email: identifier},
+                {username: identifier }]
         },
         columns: {
             userId: true,

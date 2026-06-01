@@ -36,10 +36,10 @@ const authLink = document.querySelectorAll("small>a").forEach(link => {
 
 document.querySelectorAll(".client-delete-btns").forEach(btn => {
     btn.addEventListener("click", async e => {
-        const {clientname, clientid} = e.currentTarget.dataset
-        const confirmed = confirm(`Are you sure you want to delete ${clientname} and all related data?`)
+        const {clientName, clientId} = e.currentTarget.dataset
+        const confirmed = confirm(`Are you sure you want to delete ${clientName} and all related data?`)
         if (!confirmed) return;
-        const res = await fetch(`/applications/${clientid}`, {
+        const res = await fetch(`/applications/${clientId}`, {
             method: "DELETE"
         })
         const text = await res.text();

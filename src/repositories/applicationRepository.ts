@@ -25,6 +25,14 @@ export function findAll(filters: {ownerId?: string, consentee?: string}) {
     })
 }
 
+export function findById(clientId: string) {
+    return db.query.clients.findFirst({
+        where: {
+            clientId
+        }
+    })
+}
+
 export function deleteApplication(clientId: string, userId: string) {
     return db.delete(clients).where(and(
         eq(clients.clientId, clientId),
