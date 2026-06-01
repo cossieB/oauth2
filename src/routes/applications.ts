@@ -32,7 +32,7 @@ applicationsRoutes
                 logo: key
             }, c.var.user.userId)
 
-            return c.json(client, 201)
+            return c.json({client, navigateTo: "/applications/owned"}, 201)
         }
     )
     .post(
@@ -58,7 +58,7 @@ applicationsRoutes
                 clientId
             }, c.var.user.userId)
             if (clients.length == 0) return c.notFound()
-            return c.json(clients[0])
+            return c.json({client: clients[0], navigateTo: "/applications/owned"})
         }
     )
     .delete(
@@ -67,6 +67,6 @@ applicationsRoutes
         async c => {
             const clients = await applicationRepository.deleteApplication(c.req.param("id"), c.var.user.userId)
             if (clients.length == 0) return c.notFound();
-            return c.json(clients[0])
+            return c.json({client: clients[0], navigateTo: "/applications/owned"})
         }
     )

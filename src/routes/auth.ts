@@ -1,6 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import { factory } from "../utils/createHono";
-import { AuthorizeSchema, ProfileSchema, SigninSchema, SignupSchema } from "../utils/zodSchemas";
+import { AuthCodePayload, AuthorizeSchema, ProfileSchema, SigninSchema, SignupSchema } from "../utils/zodSchemas";
 import { validatorHook } from "../utils/formateZodError";
 import { hashPassword, verifyPassword } from "../services/passwordService";
 import * as authRepository from "../repositories/userRepository";
@@ -12,6 +12,9 @@ import type { MyEnv } from "../utils/types";
 import { authCookie, dataCookie } from "../services/cookieService";
 import * as applicationRepository from "../repositories/applicationRepository"
 import { randomUUID } from "node:crypto";
+import z from "zod";
+import { sha256Base64Url } from "../utils/sha256BaseUrl";
+import { cors } from "hono/cors";
 
 export const authRoutes = factory.createApp()
 
@@ -32,7 +35,8 @@ authRoutes
             const clientInfo = getClientInfo(c)
             const sessionId = await authRepository.createUser({ ...form, passwordHash }, clientInfo);
             await authCookie.set(sessionId, c)
-            return c.text("OK")
+            const redirect = c.req.query("navigateTo")            
+            return c.json({navigateTo: redirect ?? "/profile"})
         }
     )
     .post(
@@ -49,15 +53,16 @@ authRoutes
             const { insertSession, sessionId } = authRepository.createSession(record.userId, clientInfo);
             await insertSession;
             await authCookie.set(sessionId, c)
-            return c.text("OK")
+            const redirect = c.req.query("navigateTo");
+            return c.json({navigateTo: redirect ?? "/profile"})
         }
     )
     .get(
         "/logout",
         async c => {
-            const sessionId = authCookie.delete(c);
-            sessionId && await c.env.KV.delete(sessionId);
-            return c.redirect("/")
+            authCookie.delete(c);
+            dataCookie.delete(c);
+            return c.redirect("/signin")
         }
     )
     .post(
@@ -91,8 +96,8 @@ authRoutes
         async c => {
             const valid = c.req.valid("query");
             const client = await applicationRepository.findById(valid.client_id)
-            if (!client) return c.json({ error: "Invalid client id" }, 403);
-            if (client.redirectUri != valid.redirect_uri) return c.json({ error: "Redirect URI Mismatch" }, 403);
+            if (!client) return c.json({ error: "Invalid client id" }, 400);
+            if (client.redirectUri != valid.redirect_uri) return c.json({ error: "Redirect URI Mismatch" }, 400);
             // TODO consent UI
             const code = randomUUID();
             await c.env.KV.put(`codes:${code}`, JSON.stringify({
@@ -100,8 +105,27 @@ authRoutes
                 userId: c.var.user.userId
             }), { expirationTtl: 60 * 5 })
             const redirect = new URL(valid.redirect_uri);
-            redirect.searchParams.append("code", code)
-            if (valid.state) redirect.searchParams.append("state", valid.state);
+            redirect.searchParams.set("code", code)
+            if (valid.state) redirect.searchParams.set("state", valid.state);
             return c.redirect(redirect, 307)
         }
-    )    
+    )
+    .post(
+        "/token",
+        cors({
+            allowMethods: ["POST"]
+        }),
+        zValidator("query", AuthCodePayload),
+        async c => {
+            const valid = c.req.valid("query");
+            const client = await c.env.KV.get<z.infer<typeof AuthorizeSchema> & {userId: string}>(`codes:${valid.code}`, "json");
+            if (!client) return c.json({error: "Code invalid or expired"}, 400);
+            if (valid.redirect_uri != client.redirect_uri) return c.json({error: "Redirect URI Mismatch"}, 400)
+            const isMatch = sha256Base64Url(valid.code_verifier) == client.code_challenge
+            if (isMatch === false) return c.json({error: "Code Challenge Failed"}, 400)
+            return c.json({
+                token: "askdfjsdkfksdf",
+                refresh: "sdkflasdkvamsdvkvsadfkaks"
+            })
+        }
+    ) 

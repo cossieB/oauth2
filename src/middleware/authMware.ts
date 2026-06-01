@@ -50,7 +50,7 @@ export const authedMware = createMiddleware<Authed>(async (c, next) => {
     if (c.var.user)
         return next()
     const url = new URL(c.req.url)
-    url.searchParams.append("redirect", url.pathname)
+    url.searchParams.set("navigateTo", url.pathname)
     url.pathname = "/signin"
-    return c.redirect("/signin", HttpStatusCode.TEMPORARY_REDIRECT);
+    return c.redirect(url, HttpStatusCode.TEMPORARY_REDIRECT);
 })

@@ -1,17 +1,23 @@
-function submitForm(hasBinaryData = false, redirect = "/profile") {
+function submitForm(hasBinaryData = false) {
     /**@param {SubmitEvent} e */
     return async e => {
         e.preventDefault();
         const submitBtn = e.currentTarget.querySelector("button")
         submitBtn.disabled = true;
         const fd = new FormData(e.currentTarget);
-        const body = hasBinaryData ? fd : new URLSearchParams(fd)
-        const res = await fetch(e.currentTarget.action, {
+        const body = hasBinaryData ? fd : new URLSearchParams(fd);
+        const url = new URL(e.currentTarget.action)
+        url.search = location.search
+
+        const res = await fetch(url, {
             method: "POST",
-            body
+            body,
         })
         submitBtn.disabled = false;
-        if (res.ok) return location.replace(redirect);
+        if (res.ok) {
+            const data = await res.json();
+            return location.replace((data.navigateTo ?? "/profile") + location.search)
+        }
         const errorsDiv = document.querySelector("pre")
         if (res.headers.get("Content-Type") == "application/json") {
             const data = await res.json();
@@ -25,12 +31,14 @@ function submitForm(hasBinaryData = false, redirect = "/profile") {
 document.getElementById("signup-form")?.addEventListener("submit", submitForm())
 document.getElementById("signin-form")?.addEventListener("submit", submitForm())
 document.getElementById("profile-form")?.addEventListener("submit", submitForm(true))
-document.getElementById("add-app-form")?.addEventListener("submit", submitForm(true, "/applications/owned"))
+document.getElementById("add-app-form")?.addEventListener("submit", submitForm(true))
 
 const authLink = document.querySelectorAll("small>a").forEach(link => {
     link.addEventListener("click", e => {
         e.preventDefault();
-        location.replace(link.href)
+        const url = new URL(link.href, location.origin)
+        url.search = location.search
+        location.replace(url)
     })
 })
 
