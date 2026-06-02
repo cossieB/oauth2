@@ -16,6 +16,12 @@ import z from "zod";
 import { sha256Base64Url } from "../utils/sha256BaseUrl";
 import { cors } from "hono/cors";
 import { db } from "../drizzle/db";
+import { validator } from "hono/validator";
+import { userConsent } from "../drizzle/schema";
+import { and, eq, sql } from "drizzle-orm";
+import { Consent } from "../ui/pages/consent";
+import { getSignedCookie, setSignedCookie } from "hono/cookie";
+import { compareArrays } from "../utils/compareArrays";
 
 export const authRoutes = factory.createApp()
 
@@ -110,13 +116,46 @@ authRoutes
                         if (issue.path[0] == "response_type") return c.redirect(client.redirectUri + "?error=unsupported_response_type")
                         if (issue.path[0] == "scope") return c.redirect(client.redirectUri + "?error=invalid_scope")
                     }
-
                     return c.redirect(client.redirectUri + "?error=invalid_request")
                 }
             }),
         async c => {
             const valid = c.req.valid("query");
+            const client = await db.query.clients.findFirst({
+                where: {
+                    clientId: valid.client_id
+                },
+                with: {
+                    owner: {
+                        columns: {
+                            username: true,
+                            email: true,
+                            userId: true,
+                            image: true
+                        }
+                    }
+                }
+            })
+            if (!client)
+                return c.json({ error: "Invalid Client ID" }, 400)
 
+            const consent = await db.query.userConsent.findFirst({
+                where: {
+                    userId: c.var.user.userId,
+                    clientId: valid.client_id
+                }
+            })
+            
+            if (!consent || !compareArrays(valid.scope, consent.scopes)) {
+                await setSignedCookie(c, "consent", JSON.stringify(valid), c.env.COOKIE_SECRET, {
+                    maxAge: 60 * 5,
+                    httpOnly: true,
+                    secure: c.env.NODE_ENV == "production",
+                    sameSite: "Strict",
+                    path: "/"
+                })
+                return c.render(<Consent {...client} scopes={valid.scope} user={c.var.user} />, { title: "Approve application" })
+            }
             const code = randomUUID();
             await c.env.KV.put(`codes:${code}`, JSON.stringify({
                 ...valid,
@@ -126,6 +165,28 @@ authRoutes
             redirect.searchParams.set("code", code)
             if (valid.state) redirect.searchParams.set("state", valid.state);
             return c.redirect(redirect, 307)
+        }
+    )
+    .post(
+        "/authorize/approve",
+        authedMware,
+        async c => {
+            const consentCookie = await getSignedCookie(c, c.env.COOKIE_SECRET, "consent")
+            if (!consentCookie) return c.text("Forbidden", 403);
+            const valid: z.infer<typeof AuthorizeSchema> = JSON.parse(consentCookie)
+            await db.insert(userConsent).values({
+                clientId: valid.client_id,
+                modifiedOn: new Date,
+                userId: c.var.user.userId,
+                scopes: valid.scope,                
+            }).onConflictDoUpdate({
+                target: [userConsent.clientId, userConsent.userId],
+                set: {
+                    scopes: sql`excluded.scopes`,
+                    modifiedOn: sql`excluded.modified_on`
+                }
+            })
+            return c.text("OK")
         }
     )
     .post(
@@ -146,4 +207,4 @@ authRoutes
                 refresh: "sdkflasdkvamsdvkvsadfkaks"
             })
         }
-    ) 
+    )

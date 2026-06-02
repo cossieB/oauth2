@@ -23,10 +23,11 @@ export const relations = defineRelations(schema, (r) => ({
 		}),
 	},
 	clients: {
-		user: r.one.users({
+		owner: r.one.users({
 			from: r.clients.userId,
 			to: r.users.userId,
-			alias: "clients_userId_users_userId"
+			alias: "clients_userId_users_userId",
+			optional: false
 		}),
 		usersViaUserConsent: r.many.users({
 			from: r.clients.clientId.through(r.userConsent.clientId),
@@ -37,4 +38,14 @@ export const relations = defineRelations(schema, (r) => ({
 			alias: "users_userId_clients_clientId_via_refreshTokens"
 		}),
 	},
+	userConsent: {
+		user: r.one.users({
+			from: r.userConsent.userId,
+			to: r.users.userId
+		}),
+		client: r.one.clients({
+			from: r.userConsent.clientId,
+			to: r.clients.clientId
+		})
+	}
 }))

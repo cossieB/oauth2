@@ -5,7 +5,7 @@ type Props = Client & {
     owner: {
         email: string,
         username: string,
-        image?: string
+        image?: string | null
     }
     user: {
         email: string,
@@ -20,7 +20,7 @@ export function Consent({ scopes, owner, user, ...client }: { scopes: string[] }
             <img class="h-36 w-36 mx-auto" src={client.logo ?? undefined} alt="" />
             <h1 class="font-bold text-2xl text-center">Authorize {client.name} </h1>
             <div class="flex gap-2">
-                <img class="row-start-1 col-start-1 row-span-2 col-span-1 h-20" src={owner.image} alt="" />
+                <img class="row-start-1 col-start-1 row-span-2 col-span-1 h-20" src={owner.image ?? undefined} alt="" />
                 <div class="flex flex-col justify-center">
                     <span class=""> {owner.username} </span>
                     <span class="text-gray-500"> {owner.email} </span>
@@ -51,7 +51,7 @@ export function Consent({ scopes, owner, user, ...client }: { scopes: string[] }
             </div>
             <div class={"bg-slate-800 my-5 py-2 px-1 block"}>You are logged in as {user.email} ({user.username})</div>
             <div class="flex gap-5 justify-center">
-                <A class="bg-neutral-900 p-1" href="/authorize/approve">Approve</A>
+                <button id="approval-btn" class="bg-neutral-900 p-1" href="/authorize/approve">Approve</button>
                 <A class="bg-neutral-900 p-1" href={client.redirectUri + "?error=access_denied&error_description=User%20denied%20the%20request"}>Deny</A>
             </div>
         </div>

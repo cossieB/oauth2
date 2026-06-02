@@ -1,4 +1,4 @@
-import { sqliteTable, foreignKey, index, unique, sqliteView, text, integer } from "drizzle-orm/sqlite-core"
+import { sqliteTable, foreignKey, index, unique, sqliteView, text, integer, primaryKey } from "drizzle-orm/sqlite-core"
 import { sql } from "drizzle-orm"
 
 export const users = sqliteTable("users", {
@@ -17,7 +17,7 @@ export const sessions = sqliteTable("sessions", {
 	userId: text("user_id").notNull().references(() => users.userId),
 	ipAddress: text("ip_address"),
 	userAgent: text("user_agent"),
-	createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+	createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(sql`(CAST(unixepoch('subsecond') * 1000 AS INTEGER))`),
 	expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
 	lastActivity: integer("last_activity", { mode: "timestamp_ms" }).notNull(),
 },
@@ -48,9 +48,11 @@ export const userConsent = sqliteTable("user_consent", {
 	userId: text("user_id").notNull().references(() => users.userId, { onDelete: "cascade" }),
 	clientId: text("client_id").notNull().references(() => clients.clientId, { onDelete: "cascade" }),
 	scopes: text("scopes", { mode: "json" }).$type<string[]>().default(sql`"[]"`).notNull(),
-	createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+	createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(sql`(CAST(unixepoch('subsecond') * 1000 AS INTEGER))`),
 	modifiedOn: integer("modified_on", { mode: "timestamp_ms" }),
-});
+}, t => [
+	primaryKey({columns: [t.userId, t.clientId]})
+]);
 
 export const refreshTokens = sqliteTable("refresh_tokens", {
 	tokenId: integer("token_id").primaryKey(),

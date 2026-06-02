@@ -55,3 +55,11 @@ document.querySelectorAll(".client-delete-btns").forEach(btn => {
         alert(text)
     })
 })
+
+document.getElementById("approval-btn")?.addEventListener("click", async e => {
+    e.preventDefault();
+    const res = await fetch("/authorize/approve", {
+        method: "POST"
+    })
+    if (res.ok) location.reload()
+})
