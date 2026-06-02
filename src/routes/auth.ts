@@ -15,6 +15,7 @@ import { randomUUID } from "node:crypto";
 import z from "zod";
 import { sha256Base64Url } from "../utils/sha256BaseUrl";
 import { cors } from "hono/cors";
+import { db } from "../drizzle/db";
 
 export const authRoutes = factory.createApp()
 
@@ -35,8 +36,8 @@ authRoutes
             const clientInfo = getClientInfo(c)
             const sessionId = await authRepository.createUser({ ...form, passwordHash }, clientInfo);
             await authCookie.set(sessionId, c)
-            const redirect = c.req.query("navigateTo")            
-            return c.json({navigateTo: redirect ?? "/profile"})
+            const redirect = c.req.query("navigateTo")
+            return c.json({ navigateTo: redirect ?? "/profile" })
         }
     )
     .post(
@@ -54,7 +55,7 @@ authRoutes
             await insertSession;
             await authCookie.set(sessionId, c)
             const redirect = c.req.query("navigateTo");
-            return c.json({navigateTo: redirect ?? "/profile"})
+            return c.json({ navigateTo: redirect ?? "/profile" })
         }
     )
     .get(
@@ -81,9 +82,9 @@ authRoutes
                     }
                 })
             }
-            const record = (await authRepository.updateUser({
+            const [record] = (await authRepository.updateUser({
                 name, surname, image: key
-            }))[0]
+            }))
             dataCookie.delete(c)
 
             return c.json(record)
@@ -92,13 +93,30 @@ authRoutes
     .get(
         "/authorize",
         authedMware,
-        zValidator("query", AuthorizeSchema),
+        zValidator(
+            "query",
+            AuthorizeSchema,
+            async (res, c) => {
+                if (!res.success) {
+                    const hasInvalidRedirectUri = res.error.issues.some(issue => issue.path[0] === "redirect_uri")
+                    if (hasInvalidRedirectUri) return c.json({ error: "Redirect URI Mismatch" }, 400);
+                    const hasNoClientId = res.error.issues.some(issue => issue.path[0] === "client_id")
+                    if (hasNoClientId) return c.json({ error: "Invalid Client ID" }, 400)
+                    const client = await applicationRepository.findById(res.data.client_id)
+                    if (!client) return c.json({ error: "Invalid client id" }, 400);
+                    if (client.redirectUri !== res.data.redirect_uri) return c.json({ error: "Redirect URI Mismatch" }, 400);
+
+                    for (const issue of res.error.issues) {
+                        if (issue.path[0] == "response_type") return c.redirect(client.redirectUri + "?error=unsupported_response_type")
+                        if (issue.path[0] == "scope") return c.redirect(client.redirectUri + "?error=invalid_scope")
+                    }
+
+                    return c.redirect(client.redirectUri + "?error=invalid_request")
+                }
+            }),
         async c => {
             const valid = c.req.valid("query");
-            const client = await applicationRepository.findById(valid.client_id)
-            if (!client) return c.json({ error: "Invalid client id" }, 400);
-            if (client.redirectUri != valid.redirect_uri) return c.json({ error: "Redirect URI Mismatch" }, 400);
-            // TODO consent UI
+
             const code = randomUUID();
             await c.env.KV.put(`codes:${code}`, JSON.stringify({
                 ...valid,
@@ -118,11 +136,11 @@ authRoutes
         zValidator("query", AuthCodePayload),
         async c => {
             const valid = c.req.valid("query");
-            const client = await c.env.KV.get<z.infer<typeof AuthorizeSchema> & {userId: string}>(`codes:${valid.code}`, "json");
-            if (!client) return c.json({error: "Code invalid or expired"}, 400);
-            if (valid.redirect_uri != client.redirect_uri) return c.json({error: "Redirect URI Mismatch"}, 400)
+            const client = await c.env.KV.get<z.infer<typeof AuthorizeSchema> & { userId: string }>(`codes:${valid.code}`, "json");
+            if (!client) return c.json({ error: "Code invalid or expired" }, 400);
+            if (valid.redirect_uri != client.redirect_uri) return c.json({ error: "Redirect URI Mismatch" }, 400)
             const isMatch = sha256Base64Url(valid.code_verifier) == client.code_challenge
-            if (isMatch === false) return c.json({error: "Code Challenge Failed"}, 400)
+            if (isMatch === false) return c.json({ error: "Code Challenge Failed" }, 400)
             return c.json({
                 token: "askdfjsdkfksdf",
                 refresh: "sdkflasdkvamsdvkvsadfkaks"

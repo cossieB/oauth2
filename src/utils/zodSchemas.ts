@@ -72,11 +72,17 @@ export const AppCreateSchema = z.object({
     )
 })
 
+const ScopesSchema = z.string()
+    .optional()
+    .default("")
+    .transform(val => val ? [...new Set(val.split(/(?:%20)|\s+/))].sort() : [])
+    .pipe(z.array(z.enum(["openid", "offline_access", "email", "profile"])))
+
 export const AuthorizeSchema = z.object({
     response_type: z.literal("code"),
     client_id: z.string(),
     redirect_uri: z.url(),
-    scope: z.string().default(""),
+    scope: ScopesSchema,
     state: z.string().optional(),
     code_challenge: z.string(),
     code_challenge_method: z.literal("S256")
@@ -87,5 +93,5 @@ export const AuthCodePayload = z.object({
     code: z.string(),
     redirect_uri: z.string(),
     client_id: z.string(),
-    code_verifier: z.string()    
-})
+    code_verifier: z.string()
+})    
