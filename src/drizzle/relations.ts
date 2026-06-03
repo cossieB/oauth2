@@ -29,9 +29,6 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.users.userId.through(r.userConsent.userId),
 			alias: "clients_clientId_users_userId_via_userConsent"
 		}),
-		usersViaRefreshTokens: r.many.users({
-			alias: "users_userId_clients_clientId_via_refreshTokens"
-		}),
 	},
 	userConsent: {
 		user: r.one.users({

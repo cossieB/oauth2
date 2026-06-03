@@ -28,7 +28,8 @@ export function AddApplication({app}: {app?: Application}) {
                     required     
                     value={app?.redirectUri}
                     type="url"         
-                    pattern="(^https:\/\/.+|http:\/\/localhost.+)"      
+                    pattern="(^https:\/\/.+|http:\/\/localhost.+)"   
+                    title="Full redirect URI starting with https://"   
                 />
                 <FormInput
                     id="logo"
