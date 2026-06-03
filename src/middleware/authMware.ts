@@ -7,7 +7,6 @@ import { sessions } from "../drizzle/schema";
 import { authCookie, dataCookie } from "../services/cookieService";
 
 export const authenticateMware = factory.createMiddleware(async (c, next) => {
-    console.log(c.env)
     const cachedUser = await dataCookie.getUser(c);
     if (cachedUser) {
         c.set("user", cachedUser)
