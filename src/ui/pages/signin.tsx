@@ -18,7 +18,7 @@ export function SigninPage() {
                 />
             </Form>
             <small class="block text-center">
-                <a href="/signup" >
+                <a class="auth-link" href="/signup" >
                     Make an account
                 </a>
             </small>

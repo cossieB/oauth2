@@ -26,7 +26,12 @@ export function Consent({ scopes, owner, user, ...client }: { scopes: string[] }
                     <span class="text-gray-500"> {owner.email} </span>
                 </div>
             </div>
-            <div class="text-center font-medium">This 3rd-party application is requesting access to:</div>
+            <div class="text-center font-medium">
+                {scopes.length == 0 ?
+                "This 3rd-party application would like to confirm that you have account with us" :
+                "This 3rd-party application is requesting access to:"    
+            }
+            </div>
             <div>
                 {scopes.includes("openid") &&
                     <Permissions

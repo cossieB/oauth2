@@ -45,20 +45,20 @@ export const keys = sqliteTable("keys", {
 });
 
 export const userConsent = sqliteTable("user_consent", {
+	consentId: integer("consent_id").primaryKey(),
 	userId: text("user_id").notNull().references(() => users.userId, { onDelete: "cascade" }),
 	clientId: text("client_id").notNull().references(() => clients.clientId, { onDelete: "cascade" }),
 	scopes: text("scopes", { mode: "json" }).$type<string[]>().default(sql`"[]"`).notNull(),
 	createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(sql`(CAST(unixepoch('subsecond') * 1000 AS INTEGER))`),
 	modifiedOn: integer("modified_on", { mode: "timestamp_ms" }),
 }, t => [
-	primaryKey({columns: [t.userId, t.clientId]})
+	unique("user_consent_user_id_client_id_unique").on(t.userId, t.clientId)
 ]);
 
 export const refreshTokens = sqliteTable("refresh_tokens", {
 	tokenId: integer("token_id").primaryKey(),
 	token: text().notNull(),
-	clientId: text("client_id").notNull().references(() => clients.clientId, { onDelete: "cascade" }),
-	userId: integer("user_id").notNull().references(() => users.userId, { onDelete: "cascade" }),
+	consentId: integer("consent_id").notNull().references(() => userConsent.consentId, {onDelete: "cascade"}),
 	scopes: text().notNull(),
 	expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
 	revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),

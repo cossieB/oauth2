@@ -29,7 +29,7 @@ export function Signup() {
                 />
             </Form>
             <small class="block text-center">
-                <a href="/signin">
+                <a class="auth-link" href="/signin">
                     Already have an account?
                 </a>
             </small>

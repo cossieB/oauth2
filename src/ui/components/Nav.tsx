@@ -26,10 +26,12 @@ export function Nav() {
                     <NavLink
                         href="/signin"
                         label="Sign In"
+                        className="auth-link"
                     />
                     <NavLink
                         href="/signup"
                         label="Sign Up"
+                        className="auth-link"
                     />
                 </>
             )}
@@ -37,11 +39,11 @@ export function Nav() {
     )
 }
 
-function NavLink({ href, label }: { href: string, label: string }) {
+function NavLink({ href, label, className }: { href: string, label: string, className?: string }) {
     
     return (
         <li>
-            <A href={href}> {label} </A>
+            <A href={href} class={className}> {label} </A>
         </li>
     )
 }

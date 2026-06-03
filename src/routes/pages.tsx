@@ -9,6 +9,8 @@ import { ProfilePage } from "../ui/pages/profile";
 import { db } from "../drizzle/db";
 import { YourApplications } from "../ui/pages/applications";
 import { AddApplication } from "../ui/pages/add-app";
+import { ApprovedApps } from "../ui/pages/approved-apps";
+import * as consentRepository from "../repositories/consentRepository"
 
 export const pagesRoutes = factory.createApp()
 
@@ -40,6 +42,18 @@ pagesRoutes
         c => c.render(<AddApplication />, {title: "Add Application"})
     )
     .get(
+        "/applications/approved",
+        authedMware,
+        async c => {
+            const consented = await consentRepository.getConsentedApps(c.var.user.userId)
+            return c.render(
+                <ApprovedApps
+                    consent={consented}
+                />, {title: "Approved Apps"}
+            )
+        }
+    )       
+    .get(
         "/applications/:clientId", authedMware,
         async c => {
             const app = await db.query.clients.findFirst({
@@ -52,3 +66,4 @@ pagesRoutes
             return c.render(<AddApplication app={app} />, {title: "Edit Application"})
         }
     )
+ 

@@ -33,7 +33,7 @@ document.getElementById("signin-form")?.addEventListener("submit", submitForm())
 document.getElementById("profile-form")?.addEventListener("submit", submitForm(true))
 document.getElementById("add-app-form")?.addEventListener("submit", submitForm(true))
 
-const authLink = document.querySelectorAll("small>a").forEach(link => {
+const authLink = document.querySelectorAll(".auth-link").forEach(link => {
     link.addEventListener("click", e => {
         e.preventDefault();
         const url = new URL(link.href, location.origin)
@@ -53,6 +53,18 @@ document.querySelectorAll(".client-delete-btns").forEach(btn => {
         const text = await res.text();
         if (res.ok) return location.reload()
         alert(text)
+    })
+})
+
+document.querySelectorAll(".client-revoke-btns").forEach(btn => {
+    btn.addEventListener("click", async e => {
+        const {clientName, clientId} = e.currentTarget.dataset    
+        const confirmed = confirm(`Are you sure you want to revoke permissions for ${clientName}?`) 
+        if (!confirmed) return;
+        const res = await fetch(`/applications/${clientId}/consent`, {
+            method: "DELETE"
+        })  
+        if (res.ok) location.reload()                 
     })
 })
 

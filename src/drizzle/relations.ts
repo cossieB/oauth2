@@ -16,11 +16,6 @@ export const relations = defineRelations(schema, (r) => ({
 		clientsViaUserConsent: r.many.clients({
 			alias: "clients_clientId_users_userId_via_userConsent"
 		}),
-		clientsViaRefreshTokens: r.many.clients({
-			from: r.users.userId.through(r.refreshTokens.userId),
-			to: r.clients.clientId.through(r.refreshTokens.clientId),
-			alias: "users_userId_clients_clientId_via_refreshTokens"
-		}),
 	},
 	clients: {
 		owner: r.one.users({

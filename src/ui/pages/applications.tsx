@@ -24,4 +24,3 @@ export function YourApplications({ apps }: Props) {
         </div>
     )
 }
-

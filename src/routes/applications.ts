@@ -4,6 +4,7 @@ import { factory } from "../utils/createHono";
 import { AppCreateSchema } from "../utils/zodSchemas";
 import { validatorHook } from "../utils/formateZodError";
 import * as applicationRepository from "../repositories/applicationRepository"
+import * as consentRepository from "../repositories/consentRepository"
 import { randomUUID } from "node:crypto";
 
 export const applicationsRoutes = factory.createApp()
@@ -32,7 +33,7 @@ applicationsRoutes
                 logo: key
             }, c.var.user.userId)
 
-            return c.json({client, navigateTo: "/applications/owned"}, 201)
+            return c.json({ client, navigateTo: "/applications/owned" }, 201)
         }
     )
     .post(
@@ -50,7 +51,7 @@ applicationsRoutes
                     httpMetadata: {
                         cacheControl: "public, max-age=86400"
                     }
-                })                
+                })
             }
             const clients = await applicationRepository.editApplication({
                 ...form,
@@ -58,7 +59,7 @@ applicationsRoutes
                 clientId
             }, c.var.user.userId)
             if (clients.length == 0) return c.notFound()
-            return c.json({client: clients[0], navigateTo: "/applications/owned"})
+            return c.json({ client: clients[0], navigateTo: "/applications/owned" })
         }
     )
     .delete(
@@ -67,6 +68,14 @@ applicationsRoutes
         async c => {
             const clients = await applicationRepository.deleteApplication(c.req.param("id"), c.var.user.userId)
             if (clients.length == 0) return c.notFound();
-            return c.json({client: clients[0], navigateTo: "/applications/owned"})
+            return c.json({ client: clients[0], navigateTo: "/applications/owned" })
+        }
+    )
+    .delete(
+        "/applications/:id/consent",
+        authedMware,
+        async c => {
+            await consentRepository.revokeConsent(c.var.user.userId, c.req.param("id"))
+            return c.text("OK")
         }
     )

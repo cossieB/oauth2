@@ -6,6 +6,7 @@ import { AppError } from './utils/AppError'
 import { HttpStatusCode } from './utils/statusCodes'
 import { applicationsRoutes } from './routes/applications'
 import { docsRoutes } from './routes/docs'
+import { oauthRoutes } from './routes/oauth'
 
 const app = factory.createApp()
 
@@ -19,6 +20,7 @@ app
     .route("/", pagesRoutes)
     .route("/", authRoutes)
     .route("/", applicationsRoutes)
+    .route("/", oauthRoutes)
 
 app.onError((err, c) => {
     if (err instanceof AppError)
