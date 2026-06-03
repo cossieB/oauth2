@@ -3,13 +3,11 @@ import { factory } from "../utils/createHono";
 import { AuthCodePayload, AuthorizeSchema } from "../utils/zodSchemas";
 import { authedMware } from "../middleware/authMware";
 import * as applicationRepository from "../repositories/applicationRepository"
+import * as consentRepository from "../repositories/consentRepository"
 import { randomUUID } from "node:crypto";
 import z from "zod";
 import { sha256Base64Url } from "../utils/sha256BaseUrl";
 import { cors } from "hono/cors";
-import { db } from "../drizzle/db";
-import { userConsent } from "../drizzle/schema";
-import { sql } from "drizzle-orm";
 import { Consent } from "../ui/pages/consent";
 import { getSignedCookie, setSignedCookie } from "hono/cookie";
 import { compareArrays } from "../utils/compareArrays";
@@ -51,30 +49,11 @@ oauthRoutes
             }),
         async c => {
             const valid = c.req.valid("query");
-            const client = await db.query.clients.findFirst({
-                where: {
-                    clientId: valid.client_id
-                },
-                with: {
-                    owner: {
-                        columns: {
-                            username: true,
-                            email: true,
-                            userId: true,
-                            image: true
-                        }
-                    }
-                }
-            })
+            const client = await applicationRepository.findById(valid.client_id)
             if (!client)
                 return c.json({ error: "Invalid Client ID" }, 400)
 
-            const consent = await db.query.userConsent.findFirst({
-                where: {
-                    userId: c.var.user.userId,
-                    clientId: valid.client_id
-                }
-            })
+            const consent = await consentRepository.getConsent(c.var.user.userId, valid.client_id)
 
             if (!consent || !compareArrays(valid.scope, consent.scopes)) {
                 await setSignedCookie(c, "consent", JSON.stringify(valid), c.env.COOKIE_SECRET, {
@@ -104,18 +83,7 @@ oauthRoutes
             const consentCookie = await getSignedCookie(c, c.env.COOKIE_SECRET, "consent")
             if (!consentCookie) return c.text("Forbidden", 403);
             const valid: z.infer<typeof AuthorizeSchema> = JSON.parse(consentCookie)
-            await db.insert(userConsent).values({
-                clientId: valid.client_id,
-                modifiedOn: new Date,
-                userId: c.var.user.userId,
-                scopes: valid.scope,
-            }).onConflictDoUpdate({
-                target: [userConsent.clientId, userConsent.userId],
-                set: {
-                    scopes: sql`excluded.scopes`,
-                    modifiedOn: sql`excluded.modified_on`
-                }
-            })
+            await consentRepository.addConsent(valid.client_id, c.var.user.userId, valid.scope)
             return c.text("OK")
         }
     )

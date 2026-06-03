@@ -14,7 +14,7 @@ export function createApplication(application: App, userId: string) {
         .returning()
 }
 
-export function findAll(filters: {ownerId?: string, consentee?: string}) {
+export function findAll(filters: { ownerId?: string, consentee?: string }) {
     return db.query.clients.findMany({
         where: {
             userId: filters.ownerId,
@@ -29,6 +29,16 @@ export function findById(clientId: string) {
     return db.query.clients.findFirst({
         where: {
             clientId
+        },
+        with: {
+            owner: {
+                columns: {
+                    username: true,
+                    email: true,
+                    userId: true,
+                    image: true
+                }
+            }
         }
     })
 }
@@ -42,10 +52,10 @@ export function deleteApplication(clientId: string, userId: string) {
 }
 
 export function editApplication(application: App, userId: string) {
-    const {clientId, ...rest} = application
+    const { clientId, ...rest } = application
     return db.update(clients).set(rest).where(and(
         eq(clients.clientId, clientId),
         eq(clients.userId, userId)
     ))
-    .returning()
+        .returning()
 }
