@@ -5,10 +5,12 @@ import { authRoutes } from './routes/auth'
 import { AppError } from './utils/AppError'
 import { HttpStatusCode } from './utils/statusCodes'
 import { applicationsRoutes } from './routes/applications'
+import { docsRoutes } from './routes/docs'
 
 const app = factory.createApp()
 
 app
+    .route("/", docsRoutes)
     .use(authenticateMware)
     .get('/', async (c) => {
         const redirect = c.var.user ? "/profile" : "/signin?navigateTo=/profile"
@@ -20,9 +22,9 @@ app
 
 app.onError((err, c) => {
     if (err instanceof AppError)
-        return c.json({errors: [err.message]}, err.status ?? HttpStatusCode.INTERNAL_SERVER_ERROR)
+        return c.json({ errors: [err.message] }, err.status ?? HttpStatusCode.INTERNAL_SERVER_ERROR)
     console.error(err)
-    return c.json({errors: ["Something went wrong."]}, HttpStatusCode.INTERNAL_SERVER_ERROR)
+    return c.json({ errors: ["Something went wrong."] }, HttpStatusCode.INTERNAL_SERVER_ERROR)
 })
 
 export default app
