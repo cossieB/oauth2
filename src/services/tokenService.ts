@@ -2,13 +2,13 @@ import { exportJWK, importPKCS8, importSPKI, jwtVerify, SignJWT } from "jose";
 import { db } from "../drizzle/db";
 import { keys } from "../drizzle/schema";
 import { env } from "cloudflare:workers";
-import { desc } from "drizzle-orm";
+import { desc, type InferSelectModel } from "drizzle-orm";
 import type { AuthorizeSchema } from "../utils/zodSchemas";
 import type { User } from "../utils/models";
 import type z from "zod";
 
-export async function generateJwt(claims: Record<string, unknown>, typ: "at+jwt" | "jwt" = "at+jwt") {
-    const [key] = await db.select().from(keys).orderBy(desc(keys.keyId)).limit(1)
+export async function generateJwt(claims: Record<string, unknown>, key: InferSelectModel<typeof keys>, typ: "at+jwt" | "jwt" = "at+jwt") {
+
     const privateKey = await importPKCS8(key.privateKey, "ES256");
     return new SignJWT(claims)
         .setAudience("https://cossie.dev")
@@ -27,7 +27,7 @@ export async function getJWK(key: string, kid: string) {
     const publicKey = await importSPKI(key, "ES256");
     const jwk = await exportJWK(publicKey)
     jwk.use = "sig"
-    jwk.alg = "EC256"
+    jwk.alg = "ES256"
     jwk.kid = kid
     return jwk
 }

@@ -14,10 +14,8 @@ import { compareArrays } from "../utils/compareArrays";
 import * as refreshTokenRepository from "../repositories/refreshTokenRepository"
 import { generateJwt, getIdTokenClaims, verifyToken } from "../services/tokenService";
 import { db } from "../drizzle/db";
-import { refreshTokens, userConsent, users } from "../drizzle/schema";
-import { and, eq, isNull } from "drizzle-orm";
-import { jwtVerify } from "jose";
-import { getUser } from "../repositories/userRepository";
+import { keys, refreshTokens, userConsent, users } from "../drizzle/schema";
+import { and, desc, eq, isNull } from "drizzle-orm";
 
 export const oauthRoutes = factory.createApp()
 
@@ -122,14 +120,15 @@ oauthRoutes
                     }, 400)
                 }
                 const refreshToken = client.scope.includes("offline_access") ? await refreshTokenRepository.createRefreshToken(client.consentId, client.scope) : undefined
+                const [key] = await db.select().from(keys).orderBy(desc(keys.keyId)).limit(1)                
                 const access_token = await generateJwt({
                     scope: client.scope,
                     client_id: client.client_id,
                     ucid: client.consentId
-                })
+                }, key)
                 const claims = getIdTokenClaims(client.scope, client.user)
 
-                const id_token = claims ? await generateJwt(claims, "jwt") : undefined
+                const id_token = claims ? await generateJwt(claims, key, "jwt") : undefined
                 return c.json({
                     refresh_token: refreshToken?.token,
                     access_token,
@@ -175,13 +174,14 @@ oauthRoutes
             }
             if (token.refresh_tokens.expiresAt < new Date) return invalidGrantResponse
             if (token.user_consent.clientId != client_id) return invalidGrantResponse
+            const [key] = await db.select().from(keys).orderBy(desc(keys.keyId)).limit(1)            
             const access_token = await generateJwt({
                 scope: token.user_consent.scopes,
                 client_id: token.user_consent.clientId,
                 ucid: token.user_consent.consentId
-            }, "at+jwt")
+            }, key, "at+jwt")
             const claims = getIdTokenClaims(token.user_consent.scopes as any, token.users)
-            const id_token = claims ? await generateJwt(claims, "jwt") : undefined
+            const id_token = claims ? await generateJwt(claims, key, "jwt") : undefined
             const newRefreshToken = randomUUID()
             const revokeToken = db.update(refreshTokens)
                 .set({
@@ -224,4 +224,13 @@ oauthRoutes
 
         const claims = getIdTokenClaims(result.payload.scope as any, user)!
         return c.json(claims)
+    })
+    .post("/revoke", zValidator("query", z.object({
+        token: z.string(),
+        token_type_hint: z.literal("refresh_token").optional(),
+        client_id: z.string()
+    })), async c => {
+        const valid = c.req.valid("query");
+        await refreshTokenRepository.deleteRefreshToken(valid.token, valid.client_id);
+        return c.json({message: "OK"})
     })
