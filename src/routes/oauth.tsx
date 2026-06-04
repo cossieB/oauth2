@@ -12,10 +12,12 @@ import { Consent } from "../ui/pages/consent";
 import { getSignedCookie, setSignedCookie } from "hono/cookie";
 import { compareArrays } from "../utils/compareArrays";
 import * as refreshTokenRepository from "../repositories/refreshTokenRepository"
-import { generateJwt, getIdTokenClaims } from "../services/tokenService";
+import { generateJwt, getIdTokenClaims, verifyToken } from "../services/tokenService";
 import { db } from "../drizzle/db";
 import { refreshTokens, userConsent, users } from "../drizzle/schema";
 import { and, eq, isNull } from "drizzle-orm";
+import { jwtVerify } from "jose";
+import { getUser } from "../repositories/userRepository";
 
 export const oauthRoutes = factory.createApp()
 
@@ -123,11 +125,11 @@ oauthRoutes
                 const access_token = await generateJwt({
                     scope: client.scope,
                     client_id: client.client_id,
-                    state: client.consentId
+                    ucid: client.consentId
                 })
                 const claims = getIdTokenClaims(client.scope, client.user)
 
-                const id_token = claims ? await generateJwt(claims) : undefined
+                const id_token = claims ? await generateJwt(claims, "jwt") : undefined
                 return c.json({
                     refresh_token: refreshToken?.token,
                     access_token,
@@ -177,9 +179,9 @@ oauthRoutes
                 scope: token.user_consent.scopes,
                 client_id: token.user_consent.clientId,
                 ucid: token.user_consent.consentId
-            })
+            }, "at+jwt")
             const claims = getIdTokenClaims(token.user_consent.scopes as any, token.users)
-            const id_token = claims ? await generateJwt(claims) : undefined
+            const id_token = claims ? await generateJwt(claims, "jwt") : undefined
             const newRefreshToken = randomUUID()
             const revokeToken = db.update(refreshTokens)
                 .set({
@@ -197,3 +199,29 @@ oauthRoutes
             })
         }
     )
+    .get("/userinfo", async c => {
+        const authHeader = c.req.header("Authorization")
+        if (!authHeader) return c.json({ errror: "No access token" }, 401)
+        const token = authHeader.split(/^Bearer /).at(1)
+        if (!token) return c.json({ error: "No access token" }, 401)
+        const result = await verifyToken(token, "at+jwt");
+        if (!result) return c.json({ error: "Invalid access token" }, 401)
+        if (!(result.payload.scope as any).includes("openid")) return c.json({ error: "insufficient_scope" }, 403)
+
+        const u = await db
+            .select()
+            .from(users)
+            .where(
+                eq(
+                    users.userId,
+                    db
+                        .select({ userId: userConsent.userId })
+                        .from(userConsent)
+                        .where(eq(userConsent.consentId, result.payload.ucid as number))
+                    ))
+        const user = u.at(0)
+        if (!user) return c.json({ error: "User not found" }, 404)
+
+        const claims = getIdTokenClaims(result.payload.scope as any, user)!
+        return c.json(claims)
+    })

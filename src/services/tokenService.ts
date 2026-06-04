@@ -1,4 +1,4 @@
-import { exportJWK, importPKCS8, importSPKI, SignJWT } from "jose";
+import { exportJWK, importPKCS8, importSPKI, jwtVerify, SignJWT } from "jose";
 import { db } from "../drizzle/db";
 import { keys } from "../drizzle/schema";
 import { env } from "cloudflare:workers";
@@ -7,7 +7,7 @@ import type { AuthorizeSchema } from "../utils/zodSchemas";
 import type { User } from "../utils/models";
 import type z from "zod";
 
-export async function generateJwt(claims: Record<string, unknown>) {
+export async function generateJwt(claims: Record<string, unknown>, typ: "at+jwt" | "jwt" = "at+jwt") {
     const [key] = await db.select().from(keys).orderBy(desc(keys.keyId)).limit(1)
     const privateKey = await importPKCS8(key.privateKey, "ES256");
     return new SignJWT(claims)
@@ -17,7 +17,8 @@ export async function generateJwt(claims: Record<string, unknown>) {
         .setIssuedAt()
         .setProtectedHeader({
             alg: "ES256",
-            kid: key.keyId.toString()
+            kid: key.keyId.toString(),
+            typ
         })
         .sign(privateKey)
 }
@@ -46,4 +47,19 @@ export function getIdTokenClaims(scope: z.infer<typeof AuthorizeSchema>["scope"]
         claims.image = user.image
     }
     return claims
+}
+
+export async function verifyToken(jwt: string, typ?: string) {
+    const [key] = await db.select().from(keys).orderBy(desc(keys.keyId)).limit(1)   
+    const publicKey = await importSPKI(key.publicKey, "ES256") 
+    try {
+        return await jwtVerify(jwt, publicKey, {
+            audience: "https://cossie.dev",
+            issuer: env.ISSUER,  
+            typ    
+        })
+    } 
+    catch (error) {
+        return null
+    }    
 }
