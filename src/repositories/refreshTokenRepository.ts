@@ -13,7 +13,6 @@ export async function createRefreshToken(consentId: number, scopes: string[]) {
     ))
     const token = randomUUID()
     const [refreshToken] = await db.insert(refreshTokens).values({        
-        scopes: JSON.stringify(scopes),
         token,
         consentId,        
     })
@@ -27,4 +26,12 @@ export async function deleteRefreshToken(token: string) {
 
 export async function deleteByConsentId(consentId: number) {
     return db.delete(refreshTokens).where(eq(refreshTokens.consentId, consentId))
+}
+
+export async function getRefreshToken(token: string) {
+    return db.query.refreshTokens.findFirst({
+        where:{
+            token
+        }
+    })
 }

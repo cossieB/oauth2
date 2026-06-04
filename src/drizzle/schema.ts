@@ -58,7 +58,6 @@ export const userConsent = sqliteTable("user_consent", {
 export const refreshTokens = sqliteTable("refresh_tokens", {
 	token: text().primaryKey(),
 	consentId: integer("consent_id").notNull().references(() => userConsent.consentId, {onDelete: "cascade"}),
-	scopes: text().notNull(),
 	expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull().default(sql`( CAST((unixepoch('now', '+7 days') * 1000) AS INTEGER) )`),
 	revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
 });

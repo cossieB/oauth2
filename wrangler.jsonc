@@ -25,7 +25,7 @@
   "vars": {
     "NODE_ENV": "production",
     "STORAGE_DOMAIN": "https://r2.cossie.dev",
-    "ISSUER": "https://oauth.cossie.workers.dev"
+    "ISSUER": "https://oauth2.cossie.workers.dev"
   },
   "r2_buckets": [
     {

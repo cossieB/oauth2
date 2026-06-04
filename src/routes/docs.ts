@@ -2,8 +2,8 @@ import { etag } from "hono/etag";
 import { factory } from "../utils/createHono";
 import { db } from "../drizzle/db";
 import { keys as keysTable } from "../drizzle/schema";
-import { exportJWK, importSPKI } from "jose";
 import { cors } from "hono/cors";
+import { getJWK } from "../services/tokenService";
 
 export const docsRoutes = factory.createApp()
 
@@ -42,17 +42,8 @@ docsRoutes
     }))
     .get("/.well-known/jwks", cors(), etag(), async c => {
         const keys = await db.select({publicKey: keysTable.publicKey, kid: keysTable.keyId}).from(keysTable);
-        const jwks = await Promise.all(keys.map(k => exportKey(k.publicKey, k.kid.toString())))
+        const jwks = await Promise.all(keys.map(k => getJWK(k.publicKey, k.kid.toString())))
         return c.json({
             keys: jwks
         })
     })
-
-async function exportKey(key: string, kid: string) {
-    const publicKey = await importSPKI(key, "ES256");
-    const jwk = await exportJWK(publicKey)
-    jwk.use = "sig"
-    jwk.alg = "EC256"
-    jwk.kid = kid
-    return jwk
-}

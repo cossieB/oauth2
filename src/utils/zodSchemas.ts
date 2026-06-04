@@ -88,10 +88,18 @@ export const AuthorizeSchema = z.object({
     code_challenge_method: z.literal("S256")
 })
 
-export const AuthCodePayload = z.object({
+const AuthCodePayload = z.object({
     grant_type: z.literal("authorization_code"),
     code: z.string(),
     redirect_uri: z.string(),
     client_id: z.string(),
     code_verifier: z.string()
 })    
+
+const RefreshPayload = z.object({
+    grant_type: z.literal("refresh_token"),
+    refresh_token: z.string(), 
+    client_id: z.string()
+})
+
+export const GrantType = z.discriminatedUnion("grant_type", [AuthCodePayload, RefreshPayload])

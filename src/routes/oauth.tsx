@@ -1,6 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import { factory } from "../utils/createHono";
-import { AuthCodePayload, AuthorizeSchema } from "../utils/zodSchemas";
+import { GrantType, AuthorizeSchema } from "../utils/zodSchemas";
 import { authedMware } from "../middleware/authMware";
 import * as applicationRepository from "../repositories/applicationRepository"
 import * as consentRepository from "../repositories/consentRepository"
@@ -12,7 +12,10 @@ import { Consent } from "../ui/pages/consent";
 import { getSignedCookie, setSignedCookie } from "hono/cookie";
 import { compareArrays } from "../utils/compareArrays";
 import * as refreshTokenRepository from "../repositories/refreshTokenRepository"
-import { generateJwt } from "../utils/generateAccessToken";
+import { generateJwt, getIdTokenClaims } from "../services/tokenService";
+import { db } from "../drizzle/db";
+import { refreshTokens, userConsent, users } from "../drizzle/schema";
+import { and, eq, isNull } from "drizzle-orm";
 
 export const oauthRoutes = factory.createApp()
 
@@ -95,51 +98,102 @@ oauthRoutes
         cors({
             allowMethods: ["POST"]
         }),
-        zValidator("query", AuthCodePayload),
+        zValidator("query", GrantType),
         async c => {
             const valid = c.req.valid("query");
-            const client = await c.env.KV.get<z.infer<typeof AuthorizeSchema> & { user: NonNullable<typeof c.var.user>, consentId: number }>(`codes:${valid.code}`, "json");
-            
-            if (!client) return c.json({
-                error: "invalid_grant",
-                error_description: "The provided authorization code is invalid, expired, or revoked."
-            }, 400);
-            
-            await c.env.KV.delete(`codes:${valid.code}`)
-            if (valid.redirect_uri != client.redirect_uri) return c.json({ error: "Redirect URI Mismatch" }, 400)
-            const isMatch = sha256Base64Url(valid.code_verifier) == client.code_challenge
+            if (valid.grant_type === "authorization_code") {
+                const client = await c.env.KV.get<z.infer<typeof AuthorizeSchema> & { user: NonNullable<typeof c.var.user>, consentId: number }>(`codes:${valid.code}`, "json");
 
-            if (isMatch === false) {
-                return c.json({
+                if (!client) return c.json({
                     error: "invalid_grant",
-                    error_description: "The PKCE code_verifier does not match the stored code challenge."
-                }, 400)
+                    error_description: "The provided authorization code is invalid, expired, or revoked."
+                }, 400);
+
+                await c.env.KV.delete(`codes:${valid.code}`)
+                if (valid.redirect_uri != client.redirect_uri) return c.json({ error: "Redirect URI Mismatch" }, 400)
+                const isMatch = sha256Base64Url(valid.code_verifier) == client.code_challenge
+
+                if (isMatch === false) {
+                    return c.json({
+                        error: "invalid_grant",
+                        error_description: "The PKCE code_verifier does not match the stored code challenge."
+                    }, 400)
+                }
+                const refreshToken = client.scope.includes("offline_access") ? await refreshTokenRepository.createRefreshToken(client.consentId, client.scope) : undefined
+                const access_token = await generateJwt({
+                    scope: client.scope,
+                    client_id: client.client_id,
+                    state: client.consentId
+                })
+                const claims = getIdTokenClaims(client.scope, client.user)
+
+                const id_token = claims ? await generateJwt(claims) : undefined
+                return c.json({
+                    refresh_token: refreshToken?.token,
+                    access_token,
+                    id_token,
+                    token_type: "bearer",
+                    expires_in: 15 * 60
+                })
             }
-            const refreshToken = client.scope.includes("offline_access") ? await refreshTokenRepository.createRefreshToken(client.consentId, client.scope) : undefined
+            // grant_type=refresh_token
+            const { refresh_token, client_id } = valid;
+            const invalidGrantResponse = c.json({ error: "invalid_grant" }, 400)
+            const tokens = await db
+                .select()
+                .from(refreshTokens)
+                .innerJoin(userConsent, eq(refreshTokens.consentId, userConsent.consentId))
+                .innerJoin(users, eq(userConsent.userId, users.userId))
+                .where(eq(refreshTokens.token, refresh_token))
+
+            const token = tokens.at(0)
+            if (!token) return invalidGrantResponse;
+            if (token.refresh_tokens.revokedAt) {
+                if ((Date.now() - token.refresh_tokens.revokedAt.getTime() > 1000 * 60)) {
+                    // possible stolen refresh token 
+                    await db
+                        .update(refreshTokens)
+                        .set({
+                            revokedAt: new Date
+                        })
+                        .where(and(
+                            eq(
+                                refreshTokens.consentId,
+                                db
+                                    .select({
+                                        consentId: refreshTokens.consentId,
+                                    })
+                                    .from(refreshTokens)
+                                    .where(eq(refreshTokens.token, refresh_token))
+                            ),
+                            isNull(refreshTokens.revokedAt)
+                        ))
+                }
+                return invalidGrantResponse
+            }
+            if (token.refresh_tokens.expiresAt < new Date) return invalidGrantResponse
+            if (token.user_consent.clientId != client_id) return invalidGrantResponse
             const access_token = await generateJwt({
-                scope: client.scope,
-                client_id: client.client_id,
+                scope: token.user_consent.scopes,
+                client_id: token.user_consent.clientId,
+                ucid: token.user_consent.consentId
             })
-            let id_token: string | undefined
-            if (client.scope.includes("openid")) {
-                const claims: Record<string, unknown> = {
-                    sub: client.user.userId
-                };
-                if (client.scope.includes("email")) {
-                    claims.email = client.user.email
-                    claims.email_verified = Boolean(client.user.emailVerifiedAt)
-                }
-                if (client.scope.includes("profile")) {
-                    claims.name = client.user.name
-                    claims.surname = client.user.surname
-                    claims.image = client.user.image
-                }
-                id_token = await generateJwt(claims)
-            }
+            const claims = getIdTokenClaims(token.user_consent.scopes as any, token.users)
+            const id_token = claims ? await generateJwt(claims) : undefined
+            const newRefreshToken = randomUUID()
+            const revokeToken = db.update(refreshTokens)
+                .set({
+                    revokedAt: new Date
+                })
+                .where(eq(refreshTokens.token, refresh_token))
+            const insert = db.insert(refreshTokens).values({ token: newRefreshToken, consentId: token.user_consent.consentId })
+            await db.batch([revokeToken, insert])
             return c.json({
-                refresh_token: refreshToken?.token,
+                refresh_token: newRefreshToken,
                 access_token,
-                id_token
+                id_token,
+                token_type: "bearer",
+                expires_in: 15 * 60
             })
         }
     )
