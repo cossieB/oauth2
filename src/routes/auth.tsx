@@ -68,11 +68,12 @@ authRoutes
             const { name, surname, image } = c.req.valid("form");
             let key: string | undefined
             if (image) {
-                key = `/oauth/users/${c.var.user.userId}`;
+                key = `oauth/users/${c.var.user.userId}`;
                 const buffer = await image.arrayBuffer();
                 await c.env.R2.put(key, buffer, {
                     httpMetadata: {
-                        cacheControl: "public, max-age=86400"
+                        cacheControl: "public, max-age=86400",
+                        contentType: image.type                        
                     }
                 })
             }
@@ -84,4 +85,3 @@ authRoutes
             return c.json(record)
         }
     )
-    

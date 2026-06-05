@@ -6,7 +6,7 @@ import type { MyEnv } from "../../utils/types";
 export function ProfilePage() {
     const c = useRequestContext<MyEnv>()
     const { name, surname, image } = c.var.user!
-    const imgSrc = image ? c.env.STORAGE_DOMAIN + image : "/favicon.ico"
+    const imgSrc = image ? `${c.env.STORAGE_DOMAIN}/${image}` : "/anon.png"
     return (
         <div class="w-full mx-auto">
             <h1 class="text-2xl text-center">Profile</h1>

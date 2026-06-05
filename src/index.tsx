@@ -7,6 +7,8 @@ import { HttpStatusCode } from './utils/statusCodes'
 import { applicationsRoutes } from './routes/applications'
 import { docsRoutes } from './routes/docs'
 import { oauthRoutes } from './routes/oauth'
+import { env } from 'cloudflare:workers'
+import { devRoute } from './routes/dev'
 
 const app = factory.createApp()
 
@@ -21,6 +23,9 @@ app
     .route("/", authRoutes)
     .route("/", applicationsRoutes)
     .route("/", oauthRoutes)
+
+if (env.NODE_ENV !== "production")
+    app.route("/", devRoute)
 
 app.onError((err, c) => {
     if (err instanceof AppError)

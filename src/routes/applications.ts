@@ -19,7 +19,7 @@ applicationsRoutes
             const clientId = randomUUID()
             let key: string | undefined
             if (form.logo) {
-                key = `/oauth/apps/${clientId}`
+                key = `oauth/apps/${clientId}`
                 const buffer = await form.logo.arrayBuffer();
                 await c.env.R2.put(key, buffer, {
                     httpMetadata: {
@@ -42,16 +42,18 @@ applicationsRoutes
         zValidator("form", AppCreateSchema, validatorHook),
         async c => {
             const form = c.req.valid("form")
-            const clientId = c.req.param("id")
+            const clientId = c.req.param("id");
             let key: string | undefined
             if (form.logo) {
-                key = `/oauth/apps/${clientId}`
+                key = `oauth/apps/${clientId}`
                 const buffer = await form.logo.arrayBuffer();
                 await c.env.R2.put(key, buffer, {
                     httpMetadata: {
-                        cacheControl: "public, max-age=86400"
+                        cacheControl: "public, max-age=86400",
+                        contentType: form.logo.type
                     }
                 })
+
             }
             const clients = await applicationRepository.editApplication({
                 ...form,

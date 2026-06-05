@@ -120,11 +120,11 @@ oauthRoutes
                     }, 400)
                 }
                 const refreshToken = client.scope.includes("offline_access") ? await refreshTokenRepository.createRefreshToken(client.consentId, client.scope) : undefined
-                const [key] = await db.select().from(keys).orderBy(desc(keys.keyId)).limit(1)                
+                const [key] = await db.select().from(keys).orderBy(desc(keys.keyId)).limit(1)
                 const access_token = await generateJwt({
                     scope: client.scope,
                     client_id: client.client_id,
-                    ucid: client.consentId
+                    sub: client.user.userId
                 }, key)
                 const claims = getIdTokenClaims(client.scope, client.user)
 
@@ -174,11 +174,11 @@ oauthRoutes
             }
             if (token.refresh_tokens.expiresAt < new Date) return invalidGrantResponse
             if (token.user_consent.clientId != client_id) return invalidGrantResponse
-            const [key] = await db.select().from(keys).orderBy(desc(keys.keyId)).limit(1)            
+            const [key] = await db.select().from(keys).orderBy(desc(keys.keyId)).limit(1)
             const access_token = await generateJwt({
                 scope: token.user_consent.scopes,
                 client_id: token.user_consent.clientId,
-                ucid: token.user_consent.consentId
+                sub: token.users.userId
             }, key, "at+jwt")
             const claims = getIdTokenClaims(token.user_consent.scopes as any, token.users)
             const id_token = claims ? await generateJwt(claims, key, "jwt") : undefined
@@ -211,14 +211,7 @@ oauthRoutes
         const u = await db
             .select()
             .from(users)
-            .where(
-                eq(
-                    users.userId,
-                    db
-                        .select({ userId: userConsent.userId })
-                        .from(userConsent)
-                        .where(eq(userConsent.consentId, result.payload.ucid as number))
-                    ))
+            .where(eq(users.userId, result.payload.sub!))
         const user = u.at(0)
         if (!user) return c.json({ error: "User not found" }, 404)
 
@@ -232,5 +225,5 @@ oauthRoutes
     })), async c => {
         const valid = c.req.valid("query");
         await refreshTokenRepository.deleteRefreshToken(valid.token, valid.client_id);
-        return c.json({message: "OK"})
+        return c.json({ message: "OK" })
     })

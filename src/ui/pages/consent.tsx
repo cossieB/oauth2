@@ -1,4 +1,7 @@
+import { useRequestContext } from "hono/jsx-renderer"
+import app from "../.."
 import type { Client } from "../../utils/models"
+import type { MyEnv } from "../../utils/types"
 import { A } from "../components/A"
 
 type Props = Client & {
@@ -14,30 +17,28 @@ type Props = Client & {
 }
 
 export function Consent({ scopes, owner, user, ...client }: { scopes: string[] } & Props) {
+    const c = useRequestContext<MyEnv>()
+    const logo = client.logo ? `${c.env.STORAGE_DOMAIN}/${client.logo}` : "/q.png"    
+    const ownerImage = owner.image ? `${c.env.STORAGE_DOMAIN}/${owner.image}` : "/anon.png"    
     return (
         <div>
-
-            <img class="h-36 w-36 mx-auto" src={client.logo ?? undefined} alt="" />
+            <img class="h-36 w-36 mx-auto" src={logo} alt="" />
             <h1 class="font-bold text-2xl text-center">Authorize {client.name} </h1>
             <div class="flex gap-2">
-                <img class="row-start-1 col-start-1 row-span-2 col-span-1 h-20" src={owner.image ?? undefined} alt="" />
+                <img class="row-start-1 col-start-1 row-span-2 col-span-1 h-20" src={ownerImage} alt="" />
                 <div class="flex flex-col justify-center">
                     <span class=""> {owner.username} </span>
                     <span class="text-gray-500"> {owner.email} </span>
                 </div>
             </div>
             <div class="text-center font-medium">
-                {scopes.length == 0 ?
-                "This 3rd-party application would like to confirm that you have account with us" :
-                "This 3rd-party application is requesting access to:"    
-            }
+                "This 3rd-party application is requesting access to:"                
             </div>
             <div>
-                {scopes.includes("openid") &&
-                    <Permissions
-                        heading="User ID"
-                        detail="Your user ID"
-                    />}
+                <Permissions
+                    heading="User ID"
+                    detail="Your user ID"
+                />
                 {scopes.includes("email") &&
                     <Permissions
                         heading="Email"

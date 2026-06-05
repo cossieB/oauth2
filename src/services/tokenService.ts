@@ -7,10 +7,11 @@ import type { AuthorizeSchema } from "../utils/zodSchemas";
 import type { User } from "../utils/models";
 import type z from "zod";
 
-export async function generateJwt(claims: Record<string, unknown>, key: InferSelectModel<typeof keys>, typ: "at+jwt" | "jwt" = "at+jwt") {
+export async function generateJwt(claims: Record<string, unknown> & {sub: string}, key: InferSelectModel<typeof keys>, typ: "at+jwt" | "jwt" = "at+jwt") {
 
     const privateKey = await importPKCS8(key.privateKey, "ES256");
     return new SignJWT(claims)
+        .setSubject(claims.sub)
         .setAudience("https://cossie.dev")
         .setIssuer(env.ISSUER)
         .setExpirationTime("15m")
@@ -34,7 +35,7 @@ export async function getJWK(key: string, kid: string) {
 
 export function getIdTokenClaims(scope: z.infer<typeof AuthorizeSchema>["scope"], user: Omit<User, "passwordHash">) {
     if (!scope.includes("openid")) return
-    const claims: Record<string, unknown> = {
+    const claims: Record<string, unknown> & {sub: string} = {
         sub: user.userId
     };
     if (scope.includes("email")) {

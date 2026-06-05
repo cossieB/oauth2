@@ -1,5 +1,6 @@
+import { useRequestContext } from "hono/jsx-renderer"
 import { type getConsentedApps } from "../../repositories/consentRepository"
-import { A } from "../components/A"
+import type { MyEnv } from "../../utils/types"
 
 type Props = {
     consent: Awaited<ReturnType<typeof getConsentedApps>>
@@ -7,19 +8,25 @@ type Props = {
 
 export function ApprovedApps({ consent }: Props) {
     return (
-        <div>  
+        <div>
             {consent.length == 0 ? <span>You haven't approved any app yet.</span> : ""}
-            {consent.map(c =>
-                <div
-                    key={c.clients.clientId}
-                    class="grid grid-cols-[auto_1fr_auto] w-full py-1"
-                >
-                    <img class="row-span-2" src={c.clients.logo ?? "/favicon.ico"} alt="" />
-                    <span class="col-span-1 font-bold"> {c.clients.name} </span>
-                    <span class="col-span-1"> {c.clients.clientId} </span>
-                    <button data-client-id={c.clients.clientId} data-client-name={c.clients.name} class="row-start-1 row-end-3 col-start-3 col-end-4 place-self-center text-red-600 p-1 client-revoke-btns">Revoke</button>
-                </div>
-            )}
+            {consent.map(c => <App app={c} key={c.clients.clientId} /> )}
+        </div>
+    )
+}
+
+function App({ app }: { app: Props['consent'][number] }) {
+    const c = useRequestContext<MyEnv>()
+    const imgSrc = app.clients.logo ? `${c.env.STORAGE_DOMAIN}/${app.clients.logo}` : "/q.png"    
+    return (
+        <div
+            key={app.clients.clientId}
+            class="grid grid-rows-[2rem_2rem] grid-cols-[auto_1fr_auto] w-full py-1"
+        >
+            <img class="row-span-2 h-full" src={imgSrc} alt="" />
+            <span class="col-span-1 font-bold self-end"> {app.clients.name} </span>
+            <span class="col-span-1"> {app.clients.clientId} </span>
+            <button data-client-id={app.clients.clientId} data-client-name={app.clients.name} class="row-start-1 row-end-3 col-start-3 col-end-4 place-self-center text-red-600 p-1 client-revoke-btns">Revoke</button>
         </div>
     )
 }
