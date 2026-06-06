@@ -1,16 +1,22 @@
-# OAuth2.0 auth server
+# OAuth2.0 Authorization Server
+Purely for educational purposes.
+
+## Preview
+
+Homepage
+
+https://oauth2.cossie.workers.dev
+
+OpenID Configuration
+
+https://oauth2.cossie.workers.dev/.well-known/openid-configuration
+
+## Local Development
 
 ```
 npm install
-```
 
-Generate private and public key pair.
+node ./setup.js
 
-```
-openssl ecparam -name prime256v1 -genkey -noout -out private.pem
-openssl ec -in private.pem -pubout -out public.pem
-```
-
-```
 npm run dev
 ```
