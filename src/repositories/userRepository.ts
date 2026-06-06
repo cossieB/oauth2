@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import titleCase from "../utils/titleCase";
-import { AppError } from "../utils/AppError";
 import { db } from "../drizzle/db";
 import { sessions, users } from "../drizzle/schema";
 import type { User } from "../utils/models";
+import { HTTPException } from "hono/http-exception";
 
 type U = {
     username: string,
@@ -30,7 +30,9 @@ export async function createUser(user: U, client: C) {
     catch (error) {
         const duplicateField = getDuplicateField((error as Error).message)
         if (!duplicateField) throw error
-        throw new AppError(`${titleCase(duplicateField)} has already been taken`, 400)
+        throw new HTTPException(400, {
+            message: `${titleCase(duplicateField)} has already been taken`
+        })
     }
 }
 

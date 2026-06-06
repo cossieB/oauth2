@@ -13,8 +13,6 @@ import { authCookie, dataCookie } from "../services/cookieService";
 
 export const authRoutes = factory.createApp()
 
-// authRoutes.use(csrf())
-
 const getClientInfo = (c: Context<MyEnv>) => ({
     ip: getConnInfo(c).remote.address ?? "127.0.0.1",
     userAgent: c.req.header("User-Agent") ?? ""

@@ -1,4 +1,3 @@
-import { csrf } from "hono/csrf";
 import { renderer } from "../middleware/renderer";
 import { Signup } from "../ui/pages/signup";
 import { factory } from "../utils/createHono";
@@ -66,4 +65,3 @@ pagesRoutes
             return c.render(<AddApplication app={app} />, {title: "Edit Application"})
         }
     )
- 

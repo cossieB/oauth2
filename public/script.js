@@ -19,9 +19,15 @@ function submitForm(hasBinaryData = false) {
             return location.replace((data.navigateTo ?? "/profile") + location.search)
         }
         const errorsDiv = document.querySelector("pre")
-        if (res.headers.get("Content-Type") == "application/json") {
+        const contentType = res.headers.get("Content-Type");
+        if (contentType.includes("application/json")) {
             const data = await res.json();
             errorsDiv.textContent = JSON.stringify(data.errors, null, 4);
+            return;
+        }
+        if (contentType.includes("text/plain")) {
+            const data = await res.text()
+            errorsDiv.textContent = data;
             return;
         }
         errorsDiv.textContent = "Something went wrong. Please try again later"

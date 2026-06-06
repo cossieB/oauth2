@@ -6,6 +6,7 @@ import { validatorHook } from "../utils/formateZodError";
 import * as applicationRepository from "../repositories/applicationRepository"
 import * as consentRepository from "../repositories/consentRepository"
 import { randomUUID } from "node:crypto";
+import { csrf } from "hono/csrf";
 
 export const applicationsRoutes = factory.createApp()
 
@@ -13,6 +14,7 @@ applicationsRoutes
     .post(
         "/applications",
         authedMware,
+        csrf(),
         zValidator("form", AppCreateSchema, validatorHook),
         async c => {
             const form = c.req.valid("form");
@@ -67,6 +69,7 @@ applicationsRoutes
     .delete(
         "/applications/:id",
         authedMware,
+        csrf(),
         async c => {
             const clients = await applicationRepository.deleteApplication(c.req.param("id"), c.var.user.userId)
             if (clients.length == 0) return c.notFound();
@@ -76,6 +79,7 @@ applicationsRoutes
     .delete(
         "/applications/:id/consent",
         authedMware,
+        csrf(),        
         async c => {
             await consentRepository.revokeConsent(c.var.user.userId, c.req.param("id"))
             return c.text("OK")

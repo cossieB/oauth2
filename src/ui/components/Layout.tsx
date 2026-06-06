@@ -1,6 +1,5 @@
 import { Style } from "hono/css";
 import type { Child } from "hono/jsx";
-import type { JSX } from "hono/jsx/jsx-runtime";
 import { Nav } from "./Nav";
 
 type Props = {

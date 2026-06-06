@@ -16,6 +16,7 @@ import { generateJwt, getIdTokenClaims, verifyToken } from "../services/tokenSer
 import { db } from "../drizzle/db";
 import { keys, refreshTokens, userConsent, users } from "../drizzle/schema";
 import { and, desc, eq, isNull } from "drizzle-orm";
+import { handleAuthorizeRouteError } from "../utils/handleAuthorizeErrors";
 
 export const oauthRoutes = factory.createApp()
 
@@ -26,32 +27,8 @@ oauthRoutes
         zValidator(
             "query",
             AuthorizeSchema,
-            async (res, c) => {
-                if (!res.success) {
-                    const hasInvalidRedirectUri = res.error.issues.some(issue => issue.path[0] === "redirect_uri")
-                    if (hasInvalidRedirectUri) return c.json({ error: "Redirect URI Mismatch" }, 400);
-                    const hasNoClientId = res.error.issues.some(issue => issue.path[0] === "client_id")
-                    if (hasNoClientId) return c.json({ error: "Invalid Client ID" }, 400)
-                    const client = await applicationRepository.findById(res.data.client_id)
-                    if (!client) return c.json({ error: "Invalid client id" }, 400);
-                    if (client.redirectUri !== res.data.redirect_uri) return c.json({ error: "Redirect URI Mismatch" }, 400);
-
-                    const url = new URL(client.redirectUri)
-                    if (res.data.state) url.searchParams.set("state", res.data.state)
-                    for (const issue of res.error.issues) {
-                        if (issue.path[0] == "response_type") {
-                            url.searchParams.set("error", "unsupported_response_type")
-                            return c.redirect(url)
-                        }
-                        if (issue.path[0] == "scope") {
-                            url.searchParams.set("error", "invalid_scope")
-                            return c.redirect(url)
-                        }
-                    }
-                    url.searchParams.set("error", "invalid_request")
-                    return c.redirect(url)
-                }
-            }),
+            handleAuthorizeRouteError
+        ),
         async c => {
             const valid = c.req.valid("query");
             const client = await applicationRepository.findById(valid.client_id)
