@@ -85,7 +85,8 @@ export const AuthorizeSchema = z.object({
     scope: ScopesSchema,
     state: z.string().optional(),
     code_challenge: z.string(),
-    code_challenge_method: z.literal("S256")
+    code_challenge_method: z.literal("S256"),
+    prompt: z.literal("consent").optional()
 })
 
 const AuthCodePayload = z.object({

@@ -37,7 +37,7 @@ oauthRoutes
 
             const consent = await consentRepository.getConsent(c.var.user.userId, valid.client_id)
 
-            if (!consent || !compareArrays(valid.scope, consent.scopes)) {
+            if (!consent || valid.prompt || !compareArrays(valid.scope, consent.scopes)) {
                 await setSignedCookie(c, "consent", JSON.stringify(valid), c.env.COOKIE_SECRET, {
                     maxAge: 60 * 5,
                     httpOnly: true,

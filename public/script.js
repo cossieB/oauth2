@@ -70,7 +70,7 @@ document.querySelectorAll(".client-revoke-btns").forEach(btn => {
         const res = await fetch(`/applications/${clientId}/consent`, {
             method: "DELETE"
         })  
-        if (res.ok) location.reload()                 
+        if (res.ok) location.reload()
     })
 })
 
@@ -79,5 +79,9 @@ document.getElementById("approval-btn")?.addEventListener("click", async e => {
     const res = await fetch("/authorize/approve", {
         method: "POST"
     })
-    if (res.ok) location.reload()
+    if (res.ok) {
+        const url = new URL(location.href)
+        url.searchParams.delete("prompt");
+        location.replace(url)
+    }
 })
