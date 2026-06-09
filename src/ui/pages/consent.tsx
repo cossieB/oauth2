@@ -52,7 +52,7 @@ export function Consent({ scopes, owner, user, ...client }: { scopes: string[] }
                 {scopes.includes("offline_access") &&
                     <Permissions
                         heading="Offline Access"
-                        detail={`${client.name} will securely remember your connection so you don't have to log in every time you open the app. This also lets us sync your data and updates in the background even when the app is closed`}
+                        detail={`${client.name} can continue accessing your data even when you're not logged in. You can revoke this at any time from your account settings.`}
                     />}
             </div>
             <div class={"bg-slate-800 my-5 py-2 px-1 block"}>You are logged in as {user.email} ({user.username})</div>
